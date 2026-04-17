@@ -17,6 +17,8 @@ Build and deployment tools for Vector Playground.
 | `deploy.sh` | Deploy infrastructure and/or application code |
 | `validate-bicep.sh` | Validate Bicep templates (syntax + what-if) |
 | `setup-env.sh` | First-time environment bootstrap |
+| `get-gh-secrets.sh` | Fetch and set GitHub Actions secrets |
+| `view-stats.sh` | Query Application Insights for usage stats |
 
 ## Validation
 
