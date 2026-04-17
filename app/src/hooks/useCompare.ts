@@ -8,6 +8,24 @@ export interface CompareResult {
   similarity: number;
 }
 
+type ComparePayload = CompareResult & {
+  Phrase1?: string;
+  Phrase2?: string;
+  Model?: string;
+  Dimensions?: number;
+  Similarity?: number;
+};
+
+function normalizeCompareResult(data: ComparePayload): CompareResult {
+  return {
+    phrase1: data.phrase1 ?? data.Phrase1 ?? '',
+    phrase2: data.phrase2 ?? data.Phrase2 ?? '',
+    model: data.model ?? data.Model ?? '',
+    dimensions: data.dimensions ?? data.Dimensions ?? 0,
+    similarity: data.similarity ?? data.Similarity ?? 0,
+  };
+}
+
 export function useCompare() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +47,8 @@ export function useCompare() {
         throw new Error(body.error || `Request failed with status ${response.status}`);
       }
 
-      return await response.json();
+      const body: ComparePayload = await response.json();
+      return normalizeCompareResult(body);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(message);

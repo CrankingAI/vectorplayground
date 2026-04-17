@@ -6,6 +6,11 @@ interface ReadinessResponse {
   modelsConfigured: number;
   models: string[];
   probeDimensions: number;
+  Status?: string;
+  Version?: string;
+  ModelsConfigured?: number;
+  Models?: string[];
+  ProbeDimensions?: number;
 }
 
 interface HealthStatus {
@@ -26,12 +31,15 @@ export function useHealthStatus(): HealthStatus {
         const res = await fetch('/api/readyz');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: ReadinessResponse = await res.json();
+        const readinessStatus = data.status ?? data.Status ?? 'unavailable';
+        const version = data.version ?? data.Version;
+        const modelsConfigured = data.modelsConfigured ?? data.ModelsConfigured;
         if (!cancelled) {
           setStatus({
-            isHealthy: data.status === 'ready',
+            isHealthy: readinessStatus === 'ready',
             isLoading: false,
-            version: data.version,
-            modelsConfigured: data.modelsConfigured,
+            version,
+            modelsConfigured,
           });
         }
       } catch {
