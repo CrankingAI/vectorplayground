@@ -7,9 +7,8 @@ param location string
 @description('Azure AI Foundry endpoint URL.')
 param foundryEndpoint string
 
-@description('Azure AI Foundry API key.')
-@secure()
-param foundryApiKey string
+@description('Azure AI Foundry account name.')
+param foundryAccountName string
 
 @description('Storage account name for Azure Functions runtime.')
 param storageAccountName string
@@ -44,6 +43,10 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing 
   name: storageAccountName
 }
 
+resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
+  name: foundryAccountName
+}
+
 // ── Function App ────────────────────────────────────────────────────────────────
 
 var functionAppName = 'func-vectorplayground-${environmentName}'
@@ -75,7 +78,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
         { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'dotnet-isolated' }
         { name: 'Foundry__Endpoint', value: foundryEndpoint }
-        { name: 'Foundry__ApiKey', value: foundryApiKey }
+        { name: 'Foundry__ApiKey', value: foundryAccount.listKeys().key1 }
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
       ]
     }

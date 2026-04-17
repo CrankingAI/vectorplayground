@@ -66,6 +66,13 @@ format_duration() {
 # Preflight checks
 command -v az >/dev/null 2>&1 || { log_error "Azure CLI (az) is required"; exit 1; }
 
+if [[ "$INFRA_ONLY" != "true" ]]; then
+  command -v dotnet >/dev/null 2>&1 || { log_error ".NET SDK is required"; exit 1; }
+  command -v npm >/dev/null 2>&1 || { log_error "npm is required"; exit 1; }
+  command -v npx >/dev/null 2>&1 || { log_error "npx is required"; exit 1; }
+  command -v zip >/dev/null 2>&1 || { log_error "zip is required"; exit 1; }
+fi
+
 START_TIME=$SECONDS
 
 log_info "Using subscription $SUBSCRIPTION"
@@ -75,33 +82,22 @@ RG="rg-vectorplayground"
 # --- Infrastructure deployment ---
 if [[ "$CODE_ONLY" != "true" ]]; then
   log_info "Deploying infrastructure..."
-
-  if [[ -z "${FOUNDRY_API_KEY:-}" ]]; then
-    log_info "FOUNDRY_API_KEY not set, fetching from AI Services..."
-    FOUNDRY_API_KEY=$(az cognitiveservices account keys list \
-      --subscription "$SUBSCRIPTION" \
-      --name "vectorplayground-prod" \
-      --resource-group "$RG" \
-      --query "key1" -o tsv 2>/dev/null || echo "placeholder")
-  fi
-  export FOUNDRY_API_KEY
-
-  DEPLOY_CMD="az deployment sub create \
-    --subscription $SUBSCRIPTION \
-    --location eastus2 \
-    --template-file $REPO_ROOT/infra/main.bicep \
-    --parameters $REPO_ROOT/infra/parameters/prod.bicepparam \
-    --name vectorplayground-$(date +%Y%m%d-%H%M%S)"
+  DEPLOYMENT_NAME="vectorplayground-$(date +%Y%m%d-%H%M%S)"
 
   if [[ "$DRY_RUN" == "true" ]]; then
-    log_info "[DRY RUN] Would run: $DEPLOY_CMD"
+    log_info "[DRY RUN] Would run: az deployment sub create --subscription $SUBSCRIPTION --location eastus2 --template-file $REPO_ROOT/infra/main.bicep --parameters $REPO_ROOT/infra/parameters/prod.bicepparam --name $DEPLOYMENT_NAME"
     az deployment sub what-if \
       --subscription "$SUBSCRIPTION" \
       --location eastus2 \
       --template-file "$REPO_ROOT/infra/main.bicep" \
       --parameters "$REPO_ROOT/infra/parameters/prod.bicepparam"
   else
-    eval "$DEPLOY_CMD"
+    az deployment sub create \
+      --subscription "$SUBSCRIPTION" \
+      --location eastus2 \
+      --template-file "$REPO_ROOT/infra/main.bicep" \
+      --parameters "$REPO_ROOT/infra/parameters/prod.bicepparam" \
+      --name "$DEPLOYMENT_NAME"
     log_success "Infrastructure deployed"
   fi
 fi
@@ -118,7 +114,9 @@ if [[ "$INFRA_ONLY" != "true" ]]; then
   else
     FUNC_APP="func-vectorplayground-prod"
     log_info "Deploying Function App: $FUNC_APP"
-    cd "$PUBLISH_DIR" && zip -r "$REPO_ROOT/api/deploy.zip" . >/dev/null
+    pushd "$PUBLISH_DIR" >/dev/null
+    zip -r "$REPO_ROOT/api/deploy.zip" . >/dev/null
+    popd >/dev/null
     az functionapp deployment source config-zip \
       --subscription "$SUBSCRIPTION" \
       --resource-group "$RG" \
@@ -130,9 +128,10 @@ if [[ "$INFRA_ONLY" != "true" ]]; then
 
   # Build frontend
   log_info "Building frontend..."
-  cd "$REPO_ROOT/app"
+  pushd "$REPO_ROOT/app" >/dev/null
   npm ci
   npm run build
+  popd >/dev/null
 
   if [[ "$DRY_RUN" == "true" ]]; then
     log_info "[DRY RUN] Would deploy SWA from $REPO_ROOT/app/dist"

@@ -7,10 +7,6 @@ param environmentName string = 'prod'
 @description('Primary Azure region for all resources.')
 param location string = 'eastus2'
 
-@description('API key for Azure AI Foundry (AI Services). Sourced from environment variable at deploy time.')
-@secure()
-param foundryApiKey string
-
 @description('Whether to configure Static Web App custom domains. Requires public DNS validation records to exist first.')
 param enableCustomDomains bool = false
 
@@ -67,7 +63,7 @@ module functionApp 'functionApp.bicep' = {
     environmentName: environmentName
     location: location
     foundryEndpoint: foundry.outputs.foundryEndpoint
-    foundryApiKey: foundryApiKey
+    foundryAccountName: foundry.outputs.accountName
     storageAccountName: storage.outputs.storageAccountName
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
   }
