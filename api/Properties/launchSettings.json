@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "api": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "AZURE_FUNCTIONS_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

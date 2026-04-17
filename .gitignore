@@ -1,0 +1,35 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+local.settings.json
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# IDE
+.vs/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Azure
+.azure/
+
+# Build artifacts
+*.zip
+publish/

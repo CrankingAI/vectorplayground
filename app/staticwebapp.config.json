@@ -1,0 +1,19 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/api/*", "/favicon.svg"]
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  },
+  "routes": [
+    {
+      "route": "/api/livez",
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/readyz",
+      "allowedRoles": ["anonymous"]
+    }
+  ]
+}
