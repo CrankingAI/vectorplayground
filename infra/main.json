@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.42.1.51946",
-      "templateHash": "6276107506831249394"
+      "templateHash": "5842071986193578928"
     }
   },
   "parameters": {
@@ -24,12 +24,6 @@
       "defaultValue": "eastus2",
       "metadata": {
         "description": "Primary Azure region for all resources."
-      }
-    },
-    "foundryApiKey": {
-      "type": "securestring",
-      "metadata": {
-        "description": "API key for Azure AI Foundry (AI Services). Sourced from environment variable at deploy time."
       }
     },
     "enableCustomDomains": {
@@ -442,8 +436,8 @@
           "foundryEndpoint": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-vectorplayground'), 'Microsoft.Resources/deployments', format('foundry-{0}', parameters('environmentName'))), '2025-04-01').outputs.foundryEndpoint.value]"
           },
-          "foundryApiKey": {
-            "value": "[parameters('foundryApiKey')]"
+          "foundryAccountName": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-vectorplayground'), 'Microsoft.Resources/deployments', format('foundry-{0}', parameters('environmentName'))), '2025-04-01').outputs.accountName.value]"
           },
           "storageAccountName": {
             "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, 'rg-vectorplayground'), 'Microsoft.Resources/deployments', format('storage-{0}', parameters('environmentName'))), '2025-04-01').outputs.storageAccountName.value]"
@@ -459,7 +453,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.42.1.51946",
-              "templateHash": "11932965656442419704"
+              "templateHash": "2615126017643929108"
             }
           },
           "parameters": {
@@ -481,10 +475,10 @@
                 "description": "Azure AI Foundry endpoint URL."
               }
             },
-            "foundryApiKey": {
-              "type": "securestring",
+            "foundryAccountName": {
+              "type": "string",
               "metadata": {
-                "description": "Azure AI Foundry API key."
+                "description": "Azure AI Foundry account name."
               }
             },
             "storageAccountName": {
@@ -569,7 +563,7 @@
                     },
                     {
                       "name": "Foundry__ApiKey",
-                      "value": "[parameters('foundryApiKey')]"
+                      "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-04-01-preview').key1]"
                     },
                     {
                       "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
