@@ -27,6 +27,7 @@ jobs:
         with:
           name: api-publish
           path: api/publish
+          include-hidden-files: true
 
   build-app:
     if: github.event_name != 'pull_request' || github.event.action != 'closed'
