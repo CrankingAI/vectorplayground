@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <!-- Background circle -->
+    <circle cx="100" cy="100" r="80" fill="#2563eb" fill-opacity="0.1"/>
+    
+    <!-- Main gear/crank wheel -->
+    <circle cx="100" cy="100" r="50" fill="none" stroke="#2563eb" stroke-width="12"/>
+    
+    <!-- Curved cranking.ai text with counter-clockwise rotation -->
+    <g>
+        <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 100 100"
+            to="-360 100 100"
+            dur="60s"
+            begin="15s"
+            repeatCount="indefinite"
+            repeatDur="60s"
+        />
+        <path id="curvedPath" d="M65 100 A 35 35 0 0 1 135 100" fill="none"/>
+        <text font-family="Arial, sans-serif" font-size="12" fill="#16a34a">
+            <textPath href="#curvedPath" startOffset="50%" text-anchor="middle">
+                cranking.ai
+            </textPath>
+        </text>
+    </g>
+    
+    <!-- AI Text with animation -->
+    <g>
+        <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 100 100"
+            to="360 100 100"
+            dur="60s"
+            begin="15s"
+            repeatCount="indefinite"
+            repeatDur="60s"
+        />
+        <text x="100" y="100" font-family="Arial Black, sans-serif" font-size="40" fill="#16a34a" text-anchor="middle" font-weight="bold" dominant-baseline="middle">
+            AI
+        </text>
+    </g>
+    
+    <!-- Crank handle with animation -->
+    <path d="M100 50 L100 30 L125 30 L125 15 L150 15" fill="none" stroke="#2563eb" stroke-width="12" stroke-linecap="round">
+        <animate
+            attributeName="d"
+            values="M100 50 L100 30 L125 30 L125 15 L150 15;
+                    M100 50 L100 30 L85 30 L85 15 L60 15;
+                    M100 50 L100 30 L125 30 L125 15 L150 15"
+            dur="60s"
+            begin="15s"
+            repeatCount="indefinite"
+            repeatDur="60s"
+        />
+    </path>
+    
+    <!-- Gear teeth -->
+    <g stroke="#2563eb" stroke-width="12">
+        <line x1="100" y1="50" x2="100" y2="25" />
+        <line x1="150" y1="100" x2="175" y2="100" />
+        <line x1="100" y1="150" x2="100" y2="175" />
+        <line x1="50" y1="100" x2="25" y2="100" />
+        <line x1="135" y1="65" x2="155" y2="45" />
+        <line x1="135" y1="135" x2="155" y2="155" />
+        <line x1="65" y1="135" x2="45" y2="155" />
+        <line x1="65" y1="65" x2="45" y2="45" />
+    </g>
+</svg>

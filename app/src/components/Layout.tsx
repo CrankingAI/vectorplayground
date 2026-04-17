@@ -6,6 +6,8 @@ import {
   Chip,
   CircularProgress,
   Container,
+  IconButton,
+  Stack,
   Tab,
   Tabs,
   Toolbar,
@@ -16,6 +18,7 @@ import ScienceIcon from '@mui/icons-material/Science';
 import SchoolIcon from '@mui/icons-material/School';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { useHealthStatus } from '../hooks/useHealthStatus';
 
 const navItems = [
@@ -97,13 +100,27 @@ export default function Layout() {
       </Container>
 
       <Box component="footer"
-        sx={{ py: 2, textAlign: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <Typography variant="body2" color="text.secondary">
-          Built by{' '}
-          <Link href="https://crankingai.com" target="_blank" rel="noopener" color="primary">
-            Cranking AI
+        sx={{ py: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <Stack direction="row" justifyContent="center" alignItems="center" spacing={1.5}>
+          <Link href="https://crankingai.com" target="_blank" rel="noopener">
+            <Box
+              component="img"
+              src="/crankingai-logo.svg"
+              alt="Cranking AI"
+              sx={{ height: 28, verticalAlign: 'middle' }}
+            />
           </Link>
-        </Typography>
+          <IconButton
+            component="a"
+            href="https://github.com/CrankingAI/vectorplayground"
+            target="_blank"
+            rel="noopener"
+            size="small"
+            sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
+          >
+            <GitHubIcon fontSize="small" />
+          </IconButton>
+        </Stack>
       </Box>
     </Box>
   );
