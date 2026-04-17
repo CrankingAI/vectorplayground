@@ -69,7 +69,6 @@ command -v az >/dev/null 2>&1 || { log_error "Azure CLI (az) is required"; exit 
 if [[ "$INFRA_ONLY" != "true" ]]; then
   command -v dotnet >/dev/null 2>&1 || { log_error ".NET SDK is required"; exit 1; }
   command -v npm >/dev/null 2>&1 || { log_error "npm is required"; exit 1; }
-  command -v npx >/dev/null 2>&1 || { log_error "npx is required"; exit 1; }
   command -v zip >/dev/null 2>&1 || { log_error "zip is required"; exit 1; }
 fi
 
@@ -129,13 +128,20 @@ if [[ "$INFRA_ONLY" != "true" ]]; then
   # Build frontend
   log_info "Building frontend..."
   pushd "$REPO_ROOT/app" >/dev/null
-  npm ci
+  npm ci --no-fund --no-audit
   npm run build
   popd >/dev/null
 
   if [[ "$DRY_RUN" == "true" ]]; then
     log_info "[DRY RUN] Would deploy SWA from $REPO_ROOT/app/dist"
   else
+    SWA_CLI="$REPO_ROOT/app/node_modules/.bin/swa"
+
+    [[ -x "$SWA_CLI" ]] || {
+      log_error "Azure Static Web Apps CLI was not installed by npm ci: $SWA_CLI"
+      exit 1
+    }
+
     SWA_NAME="stapp-vectorplayground-prod"
     log_info "Deploying Static Web App: $SWA_NAME"
     DEPLOYMENT_TOKEN=$(az staticwebapp secrets list \
@@ -143,7 +149,7 @@ if [[ "$INFRA_ONLY" != "true" ]]; then
       --name "$SWA_NAME" \
       --resource-group "$RG" \
       --query "properties.apiKey" -o tsv)
-    npx swa deploy "$REPO_ROOT/app/dist" \
+    "$SWA_CLI" deploy dist \
       --deployment-token "$DEPLOYMENT_TOKEN" \
       --env production
     log_success "Static Web App deployed"
