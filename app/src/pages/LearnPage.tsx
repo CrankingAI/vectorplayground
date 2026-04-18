@@ -115,10 +115,19 @@ export default function LearnPage() {
             "woman" direction transforms "king" into something close to "queen."
           </Typography>
           <Typography paragraph>
-            Try it in the Playground! Enter <code>king - man + woman</code> as Phrase 1 and <code>queen</code> as Phrase 2.
+            Important implementation detail: the Playground does <strong>not</strong> send the full string
+            <code> king - man + woman</code> to the embedding model and ask the model to interpret the operators.
+            The app parses the expression, generates separate embeddings for each term, and then performs the
+            addition and subtraction in code before showing the final comparison.
+          </Typography>
+          <Typography paragraph>
+            Try it in the Playground! Enter <code>king - man + woman</code> as Phrase 1 and <code>queen</code> as Phrase 2,
+            then run the same example across all three embedding models. These classic analogy-style examples can vary
+            quite a bit by model, and in this playground <code>text-embedding-ada-002</code> often gets closer to the
+            expected result than the newer v3 models.
           </Typography>
           <Typography>
-            Other examples to try:
+            Other examples to try across models:
           </Typography>
           <ul>
             <li><code>paris - france + germany</code> &asymp; berlin</li>
@@ -195,7 +204,8 @@ export default function LearnPage() {
           </TableContainer>
           <Typography sx={{ mt: 2 }}>
             Try comparing the same phrase pair across all three models to see how they differ.
-            Generally, the newer v3 models produce more meaningful similarity scores.
+            That is especially useful for the vector arithmetic examples above: newer models are not automatically
+            better at classic analogy tricks, and <code>text-embedding-ada-002</code> can be surprisingly strong.
           </Typography>
         </AccordionDetails>
       </Accordion>
