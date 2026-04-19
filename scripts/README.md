@@ -18,6 +18,7 @@ Build and deployment tools for Vector Playground.
 | `validate-bicep.sh` | Validate Bicep templates (syntax + what-if) |
 | `setup-env.sh` | First-time environment bootstrap |
 | `get-gh-secrets.sh` | Fetch and set GitHub Actions secrets |
+| `migrate-tenant.sh` | Re-deploy into a different Azure tenant / subscription |
 | `view-stats.sh` | Query Application Insights for usage stats |
 
 ## Validation
