@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -15,41 +15,10 @@ import {
 } from '@mui/material';
 import ScienceIcon from '@mui/icons-material/Science';
 import SchoolIcon from '@mui/icons-material/School';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { useHealthStatus } from '../hooks/useHealthStatus';
-
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    githubButtons?: { render: (el: HTMLElement) => void };
-  }
-}
-
-function GitHubStarButton() {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (ref.current && window.githubButtons) {
-      window.githubButtons.render(ref.current);
-    }
-  }, []);
-
-  return (
-    <Box ref={ref} sx={{ display: 'flex', alignItems: 'center' }}>
-      <a
-        className="github-button"
-        href="https://github.com/CrankingAI/vectorplayground"
-        data-icon="octicon-star"
-        data-size="large"
-        data-show-count="true"
-        aria-label="Star CrankingAI/vectorplayground on GitHub"
-      >
-        Star
-      </a>
-    </Box>
-  );
-}
 
 const navItems = [
   { label: 'Playground', path: '/', icon: <ScienceIcon /> },
@@ -131,7 +100,12 @@ export default function Layout() {
 
       <Box component="footer"
         sx={{ py: 2, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <Stack direction="row" justifyContent="center" alignItems="center" spacing={1.5}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="center"
+          alignItems="center"
+          spacing={{ xs: 1, sm: 1.5 }}
+        >
           <Link href="https://crankingai.com" target="_blank" rel="noopener">
             <Box
               component="img"
@@ -140,7 +114,52 @@ export default function Layout() {
               sx={{ height: 28, verticalAlign: 'middle' }}
             />
           </Link>
-          <GitHubStarButton />
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Open-source embedding playground.
+          </Typography>
+          <Link
+            href="https://github.com/CrankingAI/vectorplayground"
+            target="_blank"
+            rel="noopener"
+            aria-label="View Vector Playground source on GitHub"
+            underline="none"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 1.5,
+              py: 0.75,
+              borderRadius: '999px',
+              border: '1px solid rgba(124, 77, 255, 0.24)',
+              backgroundColor: 'rgba(124, 77, 255, 0.08)',
+              color: 'text.primary',
+              fontWeight: 600,
+              lineHeight: 1,
+              transition: 'background-color 160ms ease, border-color 160ms ease, transform 160ms ease, color 160ms ease',
+              '&:hover': {
+                backgroundColor: 'rgba(124, 77, 255, 0.16)',
+                borderColor: 'rgba(124, 77, 255, 0.42)',
+                color: 'primary.light',
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              }}
+            >
+              <GitHubIcon sx={{ fontSize: 16 }} />
+            </Box>
+            <Box component="span">View source</Box>
+          </Link>
         </Stack>
       </Box>
     </Box>

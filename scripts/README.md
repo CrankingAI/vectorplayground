@@ -10,11 +10,12 @@ Build and deployment tools for Vector Playground.
 - Azure subscription default: `BillDevPlayground`
 - Resource group: `rg-vectorplayground`
 
-## Scripts
+## Available Scripts
 
 | Script | Purpose |
-|--------|---------|
+| ------ | ------- |
 | `deploy.sh` | Deploy infrastructure and/or application code |
+| `validate-staging-prereqs.sh` | Verify or bootstrap the Azure staging slot and required GitHub Actions secret for PR staging deploys |
 | `validate-bicep.sh` | Validate Bicep templates (syntax + what-if) |
 | `setup-env.sh` | First-time environment bootstrap |
 | `get-gh-secrets.sh` | Fetch and set GitHub Actions secrets |
