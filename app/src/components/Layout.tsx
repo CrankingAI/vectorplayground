@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import ScienceIcon from '@mui/icons-material/Science';
 import SchoolIcon from '@mui/icons-material/School';
+import HistoryIcon from '@mui/icons-material/History';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { useHealthStatus } from '../hooks/useHealthStatus';
@@ -54,6 +55,7 @@ function GitHubStarButton() {
 const navItems = [
   { label: 'Playground', path: '/', icon: <ScienceIcon /> },
   { label: 'Learn', path: '/learn', icon: <SchoolIcon /> },
+  { label: 'History', path: '/history', icon: <HistoryIcon /> },
 ];
 
 export default function Layout() {
