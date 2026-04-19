@@ -1,3 +1,7 @@
+[![GitHub stars](https://img.shields.io/github/stars/CrankingAI/vectorplayground?style=social)](https://github.com/CrankingAI/vectorplayground)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512bd4)](https://dotnet.microsoft.com/en-us/download)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # Vector Playground
 
 The AI field use vectors (arrays of floating point numbers - remember those from physics or linear algebra class?) to encode meaning (semantics) of human language (or code, images, and more).
