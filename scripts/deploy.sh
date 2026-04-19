@@ -111,7 +111,7 @@ if [[ "$INFRA_ONLY" != "true" ]]; then
   if [[ "$DRY_RUN" == "true" ]]; then
     log_info "[DRY RUN] Would deploy Function App from $PUBLISH_DIR"
   else
-    FUNC_APP="func-vectorplayground-prod"
+    FUNC_APP="func-vectorplayground"
     log_info "Deploying Function App: $FUNC_APP"
     pushd "$PUBLISH_DIR" >/dev/null
     zip -r "$REPO_ROOT/api/deploy.zip" . >/dev/null
@@ -142,7 +142,7 @@ if [[ "$INFRA_ONLY" != "true" ]]; then
       exit 1
     }
 
-    SWA_NAME="stapp-vectorplayground-prod"
+    SWA_NAME="stapp-vectorplayground"
     log_info "Deploying Static Web App: $SWA_NAME"
     DEPLOYMENT_TOKEN=$(az staticwebapp secrets list \
       --subscription "$SUBSCRIPTION" \

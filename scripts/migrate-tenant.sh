@@ -130,9 +130,9 @@ if [[ -f "$PARAM_FILE" ]]; then
   [[ "$extracted_loc" =~ ^[a-z0-9]+$ ]] && LOCATION="$extracted_loc"
 fi
 STORAGE_NAME="stvectorplayground"
-FOUNDRY_NAME="vectorplayground-${ENV_NAME}"
-FUNC_NAME="func-vectorplayground-${ENV_NAME}"
-SWA_NAME="stapp-vectorplayground-${ENV_NAME}"
+FOUNDRY_NAME="vectorplayground"
+FUNC_NAME="func-vectorplayground"
+SWA_NAME="stapp-vectorplayground"
 log_info "  env=${ENV_NAME} location=${LOCATION} target-rg=${TARGET_RG}"
 log_info "  expected storage:            ${STORAGE_NAME}"
 log_info "  expected foundry subdomain:  ${FOUNDRY_NAME}"

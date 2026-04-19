@@ -72,7 +72,7 @@ jobs:
       - name: Deploy to staging slot
         uses: Azure/functions-action@v1
         with:
-          app-name: func-vectorplayground-prod
+          app-name: func-vectorplayground
           slot-name: staging
           package: api-publish
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE }}
@@ -97,7 +97,7 @@ jobs:
         working-directory: app
         run: npm run build
         env:
-          VITE_API_BASE_URL: https://func-vectorplayground-prod-staging.azurewebsites.net/api
+          VITE_API_BASE_URL: https://func-vectorplayground-staging.azurewebsites.net/api
 
       - name: Copy SWA config
         working-directory: app
@@ -127,7 +127,7 @@ jobs:
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         with:
-          app-name: func-vectorplayground-prod
+          app-name: func-vectorplayground
           package: api-publish
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
