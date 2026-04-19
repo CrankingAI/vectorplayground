@@ -40,7 +40,7 @@ We strive for **idiomatic** use of all key technologies. This means following ea
 
 ## Azure Resources
 
-- **Subscription**: BillDevPlayground
+- **Subscription**: EffAz-Prod
 - **Resource Group**: `rg-vectorplayground`
 - **AI Services**: `vectorplayground-prod` (3 embedding model deployments)
 - **Function App**: `func-vectorplayground-prod`

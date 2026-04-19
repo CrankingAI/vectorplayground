@@ -11,12 +11,13 @@ Fetch the two GitHub Actions secrets needed for CI/CD and optionally
 set them directly on the repository.
 
 Secrets retrieved:
-  SWA_DEPLOYMENT_TOKEN              Static Web App deployment token
-  AZURE_FUNCTIONAPP_PUBLISH_PROFILE Function App publish profile (XML)
+  SWA_DEPLOYMENT_TOKEN                      Static Web App deployment token
+  AZURE_FUNCTIONAPP_PUBLISH_PROFILE         Function App publish profile (XML)
+  AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE Function App staging slot publish profile (XML)
 
 Options:
   --set           Set secrets on CrankingAI/vectorplayground via gh CLI
-  --subscription  Azure subscription name (default: BillDev)
+  --subscription  Azure subscription name (default: EffAz-Prod)
   -h, --help      Show this help message
 
 Examples:
@@ -27,7 +28,7 @@ EOF
 }
 
 SET_SECRETS=false
-SUBSCRIPTION="BillDevPlayground"
+SUBSCRIPTION="EffAz-Prod"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -57,11 +58,19 @@ SWA_TOKEN=$(az staticwebapp secrets list \
   --resource-group "$RG" \
   --query "properties.apiKey" -o tsv)
 
-# 2. Function App publish profile
+# 2. Function App publish profile (production)
 log_info "Fetching Function App publish profile..."
 PUBLISH_PROFILE=$(az functionapp deployment list-publishing-profiles \
   --name "$FUNC_NAME" \
   --resource-group "$RG" \
+  --xml)
+
+# 3. Function App publish profile (staging slot)
+log_info "Fetching Function App staging slot publish profile..."
+STAGING_PUBLISH_PROFILE=$(az functionapp deployment list-publishing-profiles \
+  --name "$FUNC_NAME" \
+  --resource-group "$RG" \
+  --slot staging \
   --xml)
 
 if [[ "$SET_SECRETS" == "true" ]]; then
@@ -77,6 +86,10 @@ if [[ "$SET_SECRETS" == "true" ]]; then
   gh secret set AZURE_FUNCTIONAPP_PUBLISH_PROFILE --repo "$REPO" --body "$PUBLISH_PROFILE"
   log_success "AZURE_FUNCTIONAPP_PUBLISH_PROFILE set"
 
+  log_info "Setting AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE on $REPO..."
+  gh secret set AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE --repo "$REPO" --body "$STAGING_PUBLISH_PROFILE"
+  log_success "AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE set"
+
   log_success "Done! Push to main and CI/CD will deploy automatically."
 else
   echo ""
@@ -85,6 +98,9 @@ else
   echo ""
   echo "=== AZURE_FUNCTIONAPP_PUBLISH_PROFILE ==="
   echo "$PUBLISH_PROFILE"
+  echo ""
+  echo "=== AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE ==="
+  echo "$STAGING_PUBLISH_PROFILE"
   echo ""
   log_info "To set these on GitHub automatically, re-run with --set"
   log_info "Or set manually at: https://github.com/CrankingAI/vectorplayground/settings/secrets/actions"

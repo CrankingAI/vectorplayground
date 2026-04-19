@@ -13,7 +13,7 @@ Deploys infrastructure, then deploys application code.
 
 Options:
   --dry-run       Preview changes without deploying
-  --subscription  Azure subscription name (default: BillDev)
+  --subscription  Azure subscription name (default: EffAz-Prod)
   -h, --help      Show this help message
 
 Examples:
@@ -24,7 +24,7 @@ EOF
 }
 
 DRY_RUN=""
-SUBSCRIPTION="BillDevPlayground"
+SUBSCRIPTION="EffAz-Prod"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

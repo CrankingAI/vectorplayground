@@ -11,7 +11,7 @@ Usage: $(basename "$0") [options]
 Validate Bicep templates for Vector Playground.
 
 Options:
-  --subscription  Azure subscription name (default: BillDev)
+  --subscription  Azure subscription name (default: EffAz-Prod)
   -h, --help      Show this help message
 
 Examples:
@@ -21,7 +21,7 @@ EOF
   exit 0
 }
 
-SUBSCRIPTION="BillDevPlayground"
+SUBSCRIPTION="EffAz-Prod"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

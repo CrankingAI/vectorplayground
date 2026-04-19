@@ -7,7 +7,7 @@ Build and deployment tools for Vector Playground.
 - All scripts start with `#!/usr/bin/env bash` and `set -euo pipefail`
 - Every script supports `-h` and `--help` as first-and-only argument
 - Naming: kebab-case, verb-led (e.g., `deploy.sh`, `validate-bicep.sh`)
-- Azure subscription default: `BillDevPlayground`
+- Azure subscription default: `EffAz-Prod`
 - Resource group: `rg-vectorplayground`
 
 ## Scripts
