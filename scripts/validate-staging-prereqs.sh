@@ -49,39 +49,6 @@ EOF
   exit 0
 }
 
-BOOTSTRAP=false
-SET_SECRET=false
-STAGING_BRANCH="feat/pr-staging-environments"
-SUBSCRIPTION="BillDevPlayground"
-REPO="CrankingAI/vectorplayground"
-RESOURCE_GROUP="rg-vectorplayground"
-FUNCTION_APP="func-vectorplayground-prod"
-SLOT_NAME="staging"
-SECRET_NAME="AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE"
-ORIGINAL_BRANCH=""
-BOOTSTRAP_BRANCH=""
-SWITCHED_BRANCH=false
-
-case "${1:-}" in
-  -h|--help|help) usage ;;
-esac
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -h|--help|help) usage ;;
-    --bootstrap) BOOTSTRAP=true; shift ;;
-    --set-secret) SET_SECRET=true; shift ;;
-    --staging-branch) STAGING_BRANCH="$2"; shift 2 ;;
-    --subscription) SUBSCRIPTION="$2"; shift 2 ;;
-    --repo) REPO="$2"; shift 2 ;;
-    --resource-group) RESOURCE_GROUP="$2"; shift 2 ;;
-    --function-app) FUNCTION_APP="$2"; shift 2 ;;
-    --slot) SLOT_NAME="$2"; shift 2 ;;
-    --secret-name) SECRET_NAME="$2"; shift 2 ;;
-    *) echo "Error: unknown option: $1"; usage ;;
-  esac
-done
-
 format_duration() {
   local total_seconds="$1"
   local hours=$(( total_seconds / 3600 ))
@@ -116,6 +83,15 @@ warn() {
 fail() {
   echo "[x] $*"
   exit 1
+}
+
+require_option_value() {
+  local option_name="$1"
+  local option_value="${2:-}"
+
+  if [[ -z "$option_value" || "$option_value" == -* ]]; then
+    fail "Option '$option_name' requires a value. See --help for usage."
+  fi
 }
 
 current_branch() {
@@ -274,10 +250,73 @@ set_secret_from_slot() {
   success "Set GitHub secret '$SECRET_NAME' in $REPO"
 }
 
+BOOTSTRAP=false
+SET_SECRET=false
+STAGING_BRANCH="feat/pr-staging-environments"
+SUBSCRIPTION="BillDevPlayground"
+REPO="CrankingAI/vectorplayground"
+RESOURCE_GROUP="rg-vectorplayground"
+FUNCTION_APP="func-vectorplayground-prod"
+SLOT_NAME="staging"
+SECRET_NAME="AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE"
+ORIGINAL_BRANCH=""
+BOOTSTRAP_BRANCH=""
+SWITCHED_BRANCH=false
+slot_exists=false
+secret_exists=false
+
+case "${1:-}" in
+  -h|--help|help) usage ;;
+esac
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help|help) usage ;;
+    --bootstrap) BOOTSTRAP=true; shift ;;
+    --set-secret) SET_SECRET=true; shift ;;
+    --staging-branch)
+      require_option_value "$1" "${2:-}"
+      STAGING_BRANCH="$2"
+      shift 2
+      ;;
+    --subscription)
+      require_option_value "$1" "${2:-}"
+      SUBSCRIPTION="$2"
+      shift 2
+      ;;
+    --repo)
+      require_option_value "$1" "${2:-}"
+      REPO="$2"
+      shift 2
+      ;;
+    --resource-group)
+      require_option_value "$1" "${2:-}"
+      RESOURCE_GROUP="$2"
+      shift 2
+      ;;
+    --function-app)
+      require_option_value "$1" "${2:-}"
+      FUNCTION_APP="$2"
+      shift 2
+      ;;
+    --slot)
+      require_option_value "$1" "${2:-}"
+      SLOT_NAME="$2"
+      shift 2
+      ;;
+    --secret-name)
+      require_option_value "$1" "${2:-}"
+      SECRET_NAME="$2"
+      shift 2
+      ;;
+    *) echo "Error: unknown option: $1"; usage ;;
+  esac
+done
+
 trap cleanup EXIT
 
-command -v az >/dev/null 2>&1 || fail "Azure CLI (az) is required. Install it with: brew install azure-cli"
-command -v gh >/dev/null 2>&1 || fail "GitHub CLI (gh) is required. Install it with: brew install gh"
+command -v az >/dev/null 2>&1 || fail "Azure CLI (az) is required. Install it using the instructions for your platform and ensure 'az' is on your PATH."
+command -v gh >/dev/null 2>&1 || fail "GitHub CLI (gh) is required. Install it using the instructions for your platform and ensure 'gh' is on your PATH."
 
 git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 || \
   fail "This script must be run from within the repository worktree."
@@ -301,6 +340,52 @@ fi
 
 check_slot
 check_secret
+
+if [[ "$BOOTSTRAP" == "true" && "$slot_exists" == "false" ]]; then
+  bootstrap_slot
+fi
+
+if [[ "$SET_SECRET" == "true" && "$secret_exists" == "false" ]]; then
+  set_secret_from_slot || true
+fi
+
+if [[ "$BOOTSTRAP" == "true" && "$secret_exists" == "false" ]]; then
+  set_secret_from_slot || true
+fi
+
+if [[ "$BOOTSTRAP" == "true" ]]; then
+  check_secret
+fi
+
+echo ""
+if [[ "$slot_exists" == "true" && "$secret_exists" == "true" ]]; then
+  success "PR staging deployment prerequisites are ready"
+  note "Next: open or update a PR from the staging branch to trigger the staging workflow"
+  EXIT_CODE=0
+else
+  warn "PR staging deployment prerequisites are not ready"
+
+  if [[ "$slot_exists" == "false" ]]; then
+    note "Create the staging slot by deploying the infrastructure that includes it, then rerun this script"
+    note "Run $(basename "$0") --bootstrap to deploy the staging infra automatically"
+    note "Or switch to the staging branch and run ./scripts/deploy.sh --infra-only"
+  fi
+
+  if [[ "$secret_exists" == "false" ]]; then
+    if [[ "$slot_exists" == "true" ]]; then
+      note "Run $(basename "$0") --set-secret to fetch the slot publish profile and configure '$SECRET_NAME'"
+    fi
+    note "Run $(basename "$0") --bootstrap to set the missing secret automatically after infra is ready"
+    note "Or set the secret manually in GitHub Actions secrets for $REPO"
+  fi
+
+  EXIT_CODE=1
+fi
+
+ELAPSED=$(( $(date +%s) - START_TIME ))
+echo "🏁 clock stopped (took $(format_duration "$ELAPSED"), ended $(date '+%H:%M:%S'))"
+
+exit "$EXIT_CODE"
 
 if [[ "$BOOTSTRAP" == "true" && "$slot_exists" == "false" ]]; then
   bootstrap_slot
