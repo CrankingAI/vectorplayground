@@ -2,9 +2,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
+  local exit_code="${1:-0}"
   cat <<EOF
 Usage: $(basename "$0") --tenant <tenant-id> --subscription <sub-id-or-name> [options]
 
@@ -37,7 +37,15 @@ Examples:
   $(basename "$0") --tenant effectiveazure.com \\
     --subscription EffAz-Prod --dry-run
 EOF
-  exit 0
+  exit "$exit_code"
+}
+
+require_value() {
+  # require_value <flag-name> <value>
+  if [[ -z "${2:-}" || "${2:0:2}" == "--" ]]; then
+    echo "Error: $1 requires a value" >&2
+    usage 2
+  fi
 }
 
 TENANT=""
@@ -49,14 +57,14 @@ ASSUME_YES=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -h|--help) usage ;;
-    --tenant) TENANT="$2"; shift 2 ;;
-    --subscription) SUBSCRIPTION="$2"; shift 2 ;;
+    -h|--help) usage 0 ;;
+    --tenant) require_value "$1" "${2:-}"; TENANT="$2"; shift 2 ;;
+    --subscription) require_value "$1" "${2:-}"; SUBSCRIPTION="$2"; shift 2 ;;
     --skip-login) SKIP_LOGIN=true; shift ;;
     --skip-secrets) SKIP_SECRETS=true; shift ;;
     --dry-run) DRY_RUN="--dry-run"; shift ;;
     --yes|-y) ASSUME_YES=true; shift ;;
-    *) echo "Unknown option: $1"; usage ;;
+    *) echo "Unknown option: $1" >&2; usage 2 ;;
   esac
 done
 
@@ -67,7 +75,7 @@ log_error()   { echo -e "\033[31m[x]\033[0m $*" >&2; }
 
 if [[ -z "$TENANT" || -z "$SUBSCRIPTION" ]]; then
   log_error "--tenant and --subscription are required"
-  usage
+  usage 2
 fi
 
 command -v az >/dev/null 2>&1 || { log_error "Azure CLI (az) is required"; exit 1; }
@@ -77,7 +85,14 @@ log_info "Target subscription: $SUBSCRIPTION"
 [[ -n "$DRY_RUN" ]] && log_warn "Dry run mode — no resources will be created"
 
 if ! $ASSUME_YES; then
-  read -r -p "Proceed with tenant migration? [y/N] " reply
+  if [[ ! -t 0 ]]; then
+    log_error "Confirmation requires an interactive terminal; re-run with --yes to proceed non-interactively"
+    exit 1
+  fi
+  if ! read -r -p "Proceed with tenant migration? [y/N] " reply; then
+    log_error "Failed to read confirmation from stdin; re-run with --yes to proceed non-interactively"
+    exit 1
+  fi
   [[ "$reply" =~ ^[Yy]$ ]] || { log_info "Aborted."; exit 0; }
 fi
 
@@ -86,7 +101,7 @@ if $SKIP_LOGIN; then
   log_info "Skipping az login (--skip-login)"
 else
   log_info "Phase 1: Logging into tenant $TENANT..."
-  az login --tenant "$TENANT" --only-show-errors >/dev/null
+  az login --tenant "$TENANT" --only-show-errors
 fi
 
 # Step 2: Select subscription
