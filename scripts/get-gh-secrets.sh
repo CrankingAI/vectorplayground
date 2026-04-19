@@ -39,9 +39,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-log_info()    { echo -e "\033[34m[i]\033[0m $*"; }
-log_success() { echo -e "\033[32m[+]\033[0m $*"; }
-log_error()   { echo -e "\033[31m[x]\033[0m $*"; }
+log_info()    { echo "ℹ️  $*"; }
+log_success() { echo "✅ $*"; }
+log_error()   { echo "❌ $*"; }
 
 command -v az >/dev/null 2>&1 || { log_error "Azure CLI (az) is required"; exit 1; }
 

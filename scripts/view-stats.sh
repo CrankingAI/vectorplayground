@@ -32,7 +32,7 @@ EOF
 
 MODE="summary"
 TIMESPAN="1d"
-SUBSCRIPTION="379168a0-b9fc-4fa0-a3cd-ce32ab20ee70"
+SUBSCRIPTION="EffAz-Prod"
 APP_INSIGHTS="appi-vectorplayground"
 RG="rg-vectorplayground"
 
@@ -49,8 +49,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-log_info()  { echo -e "\033[34m[i]\033[0m $*"; }
-log_error() { echo -e "\033[31m[x]\033[0m $*"; }
+log_info()  { echo "ℹ️  $*"; }
+log_error() { echo "❌ $*"; }
 
 command -v az >/dev/null 2>&1 || { echo "Azure CLI (az) is required"; exit 1; }
 
