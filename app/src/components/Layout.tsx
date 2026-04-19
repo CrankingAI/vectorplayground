@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -6,7 +6,6 @@ import {
   Chip,
   CircularProgress,
   Container,
-  IconButton,
   Stack,
   Tab,
   Tabs,
@@ -18,8 +17,39 @@ import ScienceIcon from '@mui/icons-material/Science';
 import SchoolIcon from '@mui/icons-material/School';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import GitHubIcon from '@mui/icons-material/GitHub';
 import { useHealthStatus } from '../hooks/useHealthStatus';
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    githubButtons?: { render: (el: HTMLElement) => void };
+  }
+}
+
+function GitHubStarButton() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current && window.githubButtons) {
+      window.githubButtons.render(ref.current);
+    }
+  }, []);
+
+  return (
+    <Box ref={ref} sx={{ display: 'flex', alignItems: 'center' }}>
+      <a
+        className="github-button"
+        href="https://github.com/CrankingAI/vectorplayground"
+        data-icon="octicon-star"
+        data-size="large"
+        data-show-count="true"
+        aria-label="Star CrankingAI/vectorplayground on GitHub"
+      >
+        Star
+      </a>
+    </Box>
+  );
+}
 
 const navItems = [
   { label: 'Playground', path: '/', icon: <ScienceIcon /> },
@@ -110,16 +140,7 @@ export default function Layout() {
               sx={{ height: 28, verticalAlign: 'middle' }}
             />
           </Link>
-          <IconButton
-            component="a"
-            href="https://github.com/CrankingAI/vectorplayground"
-            target="_blank"
-            rel="noopener"
-            size="small"
-            sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
-          >
-            <GitHubIcon fontSize="small" />
-          </IconButton>
+          <GitHubStarButton />
         </Stack>
       </Box>
     </Box>
