@@ -54,6 +54,56 @@ jobs:
           name: app-dist
           path: app/dist
 
+  deploy-api-staging:
+    needs: build-api
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download API artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-publish
+          path: api-publish
+
+      - name: Deploy to staging slot
+        uses: Azure/functions-action@v1
+        with:
+          app-name: func-vectorplayground-prod
+          slot-name: staging
+          package: api-publish
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE }}
+
+  deploy-swa-staging:
+    needs: build-app
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Build with staging API URL
+        working-directory: app
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://func-vectorplayground-prod-staging.azurewebsites.net/api
+
+      - name: Deploy to SWA staging
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+          action: upload
+          app_location: app/dist
+          skip_app_build: true
+          skip_api_build: true
+
   deploy-api:
     needs: build-api
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
