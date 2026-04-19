@@ -111,12 +111,92 @@ CURRENT_SUB=$(az account show --query id -o tsv)
 CURRENT_TENANT=$(az account show --query tenantId -o tsv)
 log_success "Active sub: $CURRENT_SUB (tenant $CURRENT_TENANT)"
 
-# Step 3: Validate Bicep
-log_info "Phase 3: Validating Bicep against target subscription..."
+# Phase 3: Preflight — verify globally-unique names are free
+log_info "Phase 3: Preflight — checking globally-unique names..."
+
+PARAM_FILE="$SCRIPT_DIR/../infra/parameters/prod.bicepparam"
+ENV_NAME="prod"
+LOCATION="eastus2"
+extract_param() {
+  # extract_param <param-name> <file>
+  # Prints the quoted value (single or double quotes) or empty on no match.
+  sed -nE "s/^[[:space:]]*param[[:space:]]+$1[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p" "$2" | head -1
+}
+if [[ -f "$PARAM_FILE" ]]; then
+  extracted_env=$(extract_param environmentName "$PARAM_FILE" || true)
+  extracted_loc=$(extract_param location "$PARAM_FILE" || true)
+  [[ "$extracted_env" =~ ^[A-Za-z0-9-]+$ ]] && ENV_NAME="$extracted_env"
+  [[ "$extracted_loc" =~ ^[a-z0-9]+$ ]] && LOCATION="$extracted_loc"
+fi
+STORAGE_NAME="stvectorplayground"
+FOUNDRY_NAME="vectorplayground-${ENV_NAME}"
+log_info "  env=${ENV_NAME} location=${LOCATION}"
+log_info "  expected storage: ${STORAGE_NAME}"
+log_info "  expected foundry subdomain: ${FOUNDRY_NAME}"
+
+preflight_failed=false
+
+# Storage account name (globally unique) — single API call returns both fields
+storage_check=$(az storage account check-name --name "$STORAGE_NAME" \
+  --query "[nameAvailable, message]" -o tsv 2>/dev/null || echo "")
+if [[ -z "$storage_check" ]]; then
+  log_error "  could not verify storage name availability"
+  preflight_failed=true
+else
+  storage_available=$(printf '%s\n' "$storage_check" | head -1)
+  storage_reason=$(printf '%s\n' "$storage_check" | sed -n '2p')
+  if [[ "$storage_available" == "True" || "$storage_available" == "true" ]]; then
+    log_success "  storage name '$STORAGE_NAME' is available"
+  else
+    log_error "  storage name '$STORAGE_NAME' is NOT available: ${storage_reason:-unknown}"
+    preflight_failed=true
+  fi
+fi
+
+# Cognitive Services custom subdomain (globally unique, survives soft-delete)
+soft_deleted_name=$(az cognitiveservices account list-deleted \
+  --query "[?name=='$FOUNDRY_NAME'] | [0].name" -o tsv 2>/dev/null || echo "")
+if [[ -n "$soft_deleted_name" && "$soft_deleted_name" != "None" ]]; then
+  sd_loc=$(az cognitiveservices account list-deleted \
+    --query "[?name=='$FOUNDRY_NAME'] | [0].location" -o tsv 2>/dev/null || echo "")
+  sd_rg=$(az cognitiveservices account list-deleted \
+    --query "[?name=='$FOUNDRY_NAME'] | [0].resourceGroup" -o tsv 2>/dev/null || echo "")
+  log_error "  foundry subdomain '$FOUNDRY_NAME' is held by a SOFT-DELETED account"
+  log_error "  Purge it before migrating:"
+  log_error "    az cognitiveservices account purge --name '$FOUNDRY_NAME' --location '${sd_loc:-$LOCATION}' --resource-group '${sd_rg:-rg-vectorplayground}'"
+  preflight_failed=true
+else
+  if domain_available=$(az rest --method post \
+    --url "https://management.azure.com/subscriptions/$CURRENT_SUB/providers/Microsoft.CognitiveServices/checkDomainAvailability?api-version=2023-05-01" \
+    --body "{\"subdomainName\":\"$FOUNDRY_NAME\",\"type\":\"Microsoft.CognitiveServices/accounts\"}" \
+    --query isSubdomainAvailable -o tsv 2>/dev/null); then
+    if [[ "$domain_available" == "true" ]]; then
+      log_success "  foundry subdomain '$FOUNDRY_NAME' is available"
+    elif [[ -z "$domain_available" ]]; then
+      log_error "  could not verify foundry subdomain availability (empty response)"
+      preflight_failed=true
+    else
+      log_error "  foundry subdomain '$FOUNDRY_NAME' is NOT available (in active use elsewhere)"
+      preflight_failed=true
+    fi
+  else
+    log_error "  failed to check foundry subdomain availability"
+    preflight_failed=true
+  fi
+fi
+
+if $preflight_failed; then
+  log_error "Preflight failed. Free the names above (delete + purge in the old tenant) and re-run."
+  exit 1
+fi
+log_success "Preflight passed"
+
+# Phase 4: Validate Bicep
+log_info "Phase 4: Validating Bicep against target subscription..."
 "$SCRIPT_DIR/validate-bicep.sh" --subscription "$SUBSCRIPTION"
 
-# Step 4: Bootstrap infra + code
-log_info "Phase 4: Running setup-env.sh..."
+# Phase 5: Bootstrap infra + code
+log_info "Phase 5: Running setup-env.sh..."
 "$SCRIPT_DIR/setup-env.sh" --subscription "$SUBSCRIPTION" $DRY_RUN
 
 if [[ -n "$DRY_RUN" ]]; then
@@ -124,11 +204,11 @@ if [[ -n "$DRY_RUN" ]]; then
   exit 0
 fi
 
-# Step 5: Refresh GitHub Actions secrets
+# Phase 6: Refresh GitHub Actions secrets
 if $SKIP_SECRETS; then
   log_warn "Skipping GitHub secrets refresh (--skip-secrets)"
 else
-  log_info "Phase 5: Refreshing GitHub Actions secrets..."
+  log_info "Phase 6: Refreshing GitHub Actions secrets..."
   "$SCRIPT_DIR/get-gh-secrets.sh" --subscription "$SUBSCRIPTION" --set
 fi
 

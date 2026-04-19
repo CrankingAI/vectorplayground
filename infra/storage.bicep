@@ -7,7 +7,7 @@ param location string
 // ── Storage Account ─────────────────────────────────────────────────────────────
 
 @description('Storage account name (max 24 chars, no hyphens).')
-var storageAccountName = 'stvectorplayground${environmentName}'
+var storageAccountName = 'stvectorplayground'
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
