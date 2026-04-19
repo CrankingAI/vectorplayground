@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -20,35 +20,15 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { useHealthStatus } from '../hooks/useHealthStatus';
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    githubButtons?: { render: (el: HTMLElement) => void };
-  }
-}
-
 function GitHubStarButton() {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (ref.current && window.githubButtons) {
-      window.githubButtons.render(ref.current);
-    }
-  }, []);
-
   return (
-    <Box ref={ref} sx={{ display: 'flex', alignItems: 'center' }}>
-      <a
-        className="github-button"
-        href="https://github.com/CrankingAI/vectorplayground"
-        data-icon="octicon-star"
-        data-size="large"
-        data-show-count="true"
-        aria-label="Star CrankingAI/vectorplayground on GitHub"
-      >
-        Star
-      </a>
-    </Box>
+    <Box
+      component="iframe"
+      src="https://ghbtns.com/github-btn.html?user=CrankingAI&repo=vectorplayground&type=star&count=true&size=large"
+      sx={{ border: 0, overflow: 'hidden', width: 170, height: 30 }}
+      scrolling="no"
+      title="Star CrankingAI/vectorplayground on GitHub"
+    />
   );
 }
 
