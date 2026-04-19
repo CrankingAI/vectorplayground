@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 export interface CompareResult {
   phrase1: string;
@@ -40,7 +41,7 @@ export function useCompare() {
 
     try {
       const params = new URLSearchParams({ phrase1, phrase2, model });
-      const response = await fetch(`/api/ComparePhrases?${params}`);
+      const response = await fetch(`${API_BASE_URL}/ComparePhrases?${params}`);
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
