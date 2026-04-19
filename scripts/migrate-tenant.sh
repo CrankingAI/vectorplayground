@@ -111,12 +111,13 @@ CURRENT_SUB=$(az account show --query id -o tsv)
 CURRENT_TENANT=$(az account show --query tenantId -o tsv)
 log_success "Active sub: $CURRENT_SUB (tenant $CURRENT_TENANT)"
 
-# Phase 3: Preflight — verify globally-unique names are free
+# Phase 3: Preflight — verify globally-unique names are free (or already ours)
 log_info "Phase 3: Preflight — checking globally-unique names..."
 
 PARAM_FILE="$SCRIPT_DIR/../infra/parameters/prod.bicepparam"
 ENV_NAME="prod"
 LOCATION="eastus2"
+TARGET_RG="rg-vectorplayground"
 extract_param() {
   # extract_param <param-name> <file>
   # Prints the quoted value (single or double quotes) or empty on no match.
@@ -130,63 +131,117 @@ if [[ -f "$PARAM_FILE" ]]; then
 fi
 STORAGE_NAME="stvectorplayground"
 FOUNDRY_NAME="vectorplayground-${ENV_NAME}"
-log_info "  env=${ENV_NAME} location=${LOCATION}"
-log_info "  expected storage: ${STORAGE_NAME}"
-log_info "  expected foundry subdomain: ${FOUNDRY_NAME}"
+FUNC_NAME="func-vectorplayground-${ENV_NAME}"
+SWA_NAME="stapp-vectorplayground-${ENV_NAME}"
+log_info "  env=${ENV_NAME} location=${LOCATION} target-rg=${TARGET_RG}"
+log_info "  expected storage:            ${STORAGE_NAME}"
+log_info "  expected foundry subdomain:  ${FOUNDRY_NAME}"
+log_info "  expected function app:       ${FUNC_NAME}"
+log_info "  expected static web app:     ${SWA_NAME}"
 
 preflight_failed=false
 
-# Storage account name (globally unique) — single API call returns both fields
-storage_check=$(az storage account check-name --name "$STORAGE_NAME" \
-  --query "[nameAvailable, message]" -o tsv 2>/dev/null || echo "")
-if [[ -z "$storage_check" ]]; then
-  log_error "  could not verify storage name availability"
-  preflight_failed=true
+# ---------------- Storage account ----------------
+# If it already exists in the target RG, it's ours (idempotent redeploy).
+if az storage account show -n "$STORAGE_NAME" -g "$TARGET_RG" --query id -o tsv >/dev/null 2>&1; then
+  log_success "  storage '$STORAGE_NAME' already exists in $TARGET_RG (ours) — redeploy will be idempotent"
 else
-  storage_available=$(printf '%s\n' "$storage_check" | head -1)
-  storage_reason=$(printf '%s\n' "$storage_check" | sed -n '2p')
-  if [[ "$storage_available" == "True" || "$storage_available" == "true" ]]; then
-    log_success "  storage name '$STORAGE_NAME' is available"
-  else
-    log_error "  storage name '$STORAGE_NAME' is NOT available: ${storage_reason:-unknown}"
+  storage_check=$(az storage account check-name --name "$STORAGE_NAME" \
+    --query "[nameAvailable, message]" -o tsv 2>/dev/null || echo "")
+  if [[ -z "$storage_check" ]]; then
+    log_error "  could not verify storage name availability"
     preflight_failed=true
+  else
+    storage_available=$(printf '%s\n' "$storage_check" | head -1)
+    storage_reason=$(printf '%s\n' "$storage_check" | sed -n '2p')
+    if [[ "$storage_available" == "True" || "$storage_available" == "true" ]]; then
+      log_success "  storage name '$STORAGE_NAME' is available"
+    else
+      log_error "  storage name '$STORAGE_NAME' is NOT available: ${storage_reason:-unknown}"
+      log_error "    Fix: find + delete the account holding the name, or rename in infra/storage.bicep"
+      preflight_failed=true
+    fi
   fi
 fi
 
-# Cognitive Services custom subdomain (globally unique, survives soft-delete)
-soft_deleted_name=$(az cognitiveservices account list-deleted \
-  --query "[?name=='$FOUNDRY_NAME'] | [0].name" -o tsv 2>/dev/null || echo "")
-if [[ -n "$soft_deleted_name" && "$soft_deleted_name" != "None" ]]; then
-  sd_loc=$(az cognitiveservices account list-deleted \
-    --query "[?name=='$FOUNDRY_NAME'] | [0].location" -o tsv 2>/dev/null || echo "")
-  sd_rg=$(az cognitiveservices account list-deleted \
-    --query "[?name=='$FOUNDRY_NAME'] | [0].resourceGroup" -o tsv 2>/dev/null || echo "")
-  log_error "  foundry subdomain '$FOUNDRY_NAME' is held by a SOFT-DELETED account"
-  log_error "  Purge it before migrating:"
-  log_error "    az cognitiveservices account purge --name '$FOUNDRY_NAME' --location '${sd_loc:-$LOCATION}' --resource-group '${sd_rg:-rg-vectorplayground}'"
-  preflight_failed=true
+# ---------------- Function App (globally-unique hostname in azurewebsites.net) ----------------
+if az webapp show -n "$FUNC_NAME" -g "$TARGET_RG" --query id -o tsv >/dev/null 2>&1; then
+  log_success "  function app '$FUNC_NAME' already exists in $TARGET_RG (ours) — redeploy will be idempotent"
 else
-  if domain_available=$(az rest --method post \
-    --url "https://management.azure.com/subscriptions/$CURRENT_SUB/providers/Microsoft.CognitiveServices/checkDomainAvailability?api-version=2023-05-01" \
-    --body "{\"subdomainName\":\"$FOUNDRY_NAME\",\"type\":\"Microsoft.CognitiveServices/accounts\"}" \
-    --query isSubdomainAvailable -o tsv 2>/dev/null); then
-    if [[ "$domain_available" == "true" ]]; then
-      log_success "  foundry subdomain '$FOUNDRY_NAME' is available"
-    elif [[ -z "$domain_available" ]]; then
-      log_error "  could not verify foundry subdomain availability (empty response)"
-      preflight_failed=true
+  func_check=$(az rest --method post \
+    --url "https://management.azure.com/subscriptions/$CURRENT_SUB/providers/Microsoft.Web/checknameavailability?api-version=2023-12-01" \
+    --body "{\"name\":\"$FUNC_NAME\",\"type\":\"Microsoft.Web/sites\"}" \
+    --query "[nameAvailable, message]" -o tsv 2>/dev/null || echo "")
+  if [[ -z "$func_check" ]]; then
+    log_error "  could not verify function app name availability"
+    preflight_failed=true
+  else
+    func_available=$(printf '%s\n' "$func_check" | head -1)
+    func_reason=$(printf '%s\n' "$func_check" | sed -n '2,$p' | tr '\n' ' ')
+    if [[ "$func_available" == "True" || "$func_available" == "true" ]]; then
+      log_success "  function app name '$FUNC_NAME' is available"
     else
-      log_error "  foundry subdomain '$FOUNDRY_NAME' is NOT available (in active use elsewhere)"
+      log_error "  function app name '$FUNC_NAME' is NOT available: ${func_reason:-unknown}"
+      log_error "    Fix: delete the site holding the name (possibly still releasing after RG delete — retry in 10-15m)"
+      log_error "    Or rename functionAppName in infra/functionApp.bicep (e.g. drop the -\${environmentName} suffix)"
       preflight_failed=true
     fi
-  else
-    log_error "  failed to check foundry subdomain availability"
+  fi
+fi
+
+# ---------------- Static Web App ----------------
+# SWA resource names aren't globally-unique the same way (hostname gets a hash suffix),
+# but we still check idempotency against the target RG so the log is informative.
+if az staticwebapp show -n "$SWA_NAME" -g "$TARGET_RG" --query id -o tsv >/dev/null 2>&1; then
+  log_success "  static web app '$SWA_NAME' already exists in $TARGET_RG (ours) — redeploy will be idempotent"
+else
+  log_info "  static web app '$SWA_NAME' will be created fresh"
+fi
+
+# ---------------- Foundry (Cognitive Services) custom subdomain ----------------
+# Globally unique; survives soft-delete for 48h.
+existing_foundry=$(az cognitiveservices account show -n "$FOUNDRY_NAME" -g "$TARGET_RG" \
+  --query "properties.customSubDomainName" -o tsv 2>/dev/null || echo "")
+if [[ "$existing_foundry" == "$FOUNDRY_NAME" ]]; then
+  log_success "  foundry '$FOUNDRY_NAME' already exists in $TARGET_RG (ours) — redeploy will be idempotent"
+else
+  soft_deleted_name=$(az cognitiveservices account list-deleted \
+    --query "[?name=='$FOUNDRY_NAME'] | [0].name" -o tsv 2>/dev/null || echo "")
+  if [[ -n "$soft_deleted_name" && "$soft_deleted_name" != "None" ]]; then
+    sd_loc=$(az cognitiveservices account list-deleted \
+      --query "[?name=='$FOUNDRY_NAME'] | [0].location" -o tsv 2>/dev/null || echo "")
+    sd_rg=$(az cognitiveservices account list-deleted \
+      --query "[?name=='$FOUNDRY_NAME'] | [0].resourceGroup" -o tsv 2>/dev/null || echo "")
+    log_error "  foundry subdomain '$FOUNDRY_NAME' is held by a SOFT-DELETED account"
+    log_error "    Fix: az cognitiveservices account purge --name '$FOUNDRY_NAME' --location '${sd_loc:-$LOCATION}' --resource-group '${sd_rg:-$TARGET_RG}'"
     preflight_failed=true
+  else
+    if domain_available=$(az rest --method post \
+      --url "https://management.azure.com/subscriptions/$CURRENT_SUB/providers/Microsoft.CognitiveServices/checkDomainAvailability?api-version=2023-05-01" \
+      --body "{\"subdomainName\":\"$FOUNDRY_NAME\",\"type\":\"Microsoft.CognitiveServices/accounts\"}" \
+      --query isSubdomainAvailable -o tsv 2>/dev/null); then
+      if [[ "$domain_available" == "true" ]]; then
+        log_success "  foundry subdomain '$FOUNDRY_NAME' is available"
+      elif [[ -z "$domain_available" ]]; then
+        log_error "  could not verify foundry subdomain availability (empty response)"
+        preflight_failed=true
+      else
+        log_error "  foundry subdomain '$FOUNDRY_NAME' is NOT available (in active use elsewhere)"
+        log_error "    Diagnose: az cognitiveservices account list --query \"[?properties.customSubDomainName=='$FOUNDRY_NAME']\" -o table"
+        log_error "    Then across all accessible subs:"
+        log_error "      for s in \$(az account list --query '[].id' -o tsv); do az account set -s \"\$s\"; az cognitiveservices account list --query \"[?properties.customSubDomainName=='$FOUNDRY_NAME'].{sub:'\$s',name:name,rg:resourceGroup}\" -o tsv; done"
+        log_error "    Fix: delete the holder, then purge if needed, or rename accountName in infra/foundry.bicep"
+        preflight_failed=true
+      fi
+    else
+      log_error "  failed to check foundry subdomain availability"
+      preflight_failed=true
+    fi
   fi
 fi
 
 if $preflight_failed; then
-  log_error "Preflight failed. Free the names above (delete + purge in the old tenant) and re-run."
+  log_error "Preflight failed. See fixes above, then re-run."
   exit 1
 fi
 log_success "Preflight passed"
