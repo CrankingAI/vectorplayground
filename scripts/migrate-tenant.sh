@@ -123,7 +123,7 @@ if [[ -f "$PARAM_FILE" ]]; then
   ENV_NAME="${ENV_NAME:-prod}"
   LOCATION="${LOCATION:-eastus2}"
 fi
-STORAGE_NAME="stvectorplayground${ENV_NAME}"
+STORAGE_NAME="stvectorplayground"
 FOUNDRY_NAME="vectorplayground-${ENV_NAME}"
 log_info "  env=${ENV_NAME} location=${LOCATION}"
 log_info "  expected storage: ${STORAGE_NAME}"
