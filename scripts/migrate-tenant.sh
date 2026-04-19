@@ -117,11 +117,16 @@ log_info "Phase 3: Preflight — checking globally-unique names..."
 PARAM_FILE="$SCRIPT_DIR/../infra/parameters/prod.bicepparam"
 ENV_NAME="prod"
 LOCATION="eastus2"
+extract_param() {
+  # extract_param <param-name> <file>
+  # Prints the quoted value (single or double quotes) or empty on no match.
+  sed -nE "s/^[[:space:]]*param[[:space:]]+$1[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p" "$2" | head -1
+}
 if [[ -f "$PARAM_FILE" ]]; then
-  ENV_NAME=$(grep -E "^param environmentName" "$PARAM_FILE" | sed -E "s/.*=[[:space:]]*'([^']+)'.*/\1/" | head -1)
-  LOCATION=$(grep -E "^param location" "$PARAM_FILE" | sed -E "s/.*=[[:space:]]*'([^']+)'.*/\1/" | head -1)
-  ENV_NAME="${ENV_NAME:-prod}"
-  LOCATION="${LOCATION:-eastus2}"
+  extracted_env=$(extract_param environmentName "$PARAM_FILE" || true)
+  extracted_loc=$(extract_param location "$PARAM_FILE" || true)
+  [[ "$extracted_env" =~ ^[A-Za-z0-9-]+$ ]] && ENV_NAME="$extracted_env"
+  [[ "$extracted_loc" =~ ^[a-z0-9]+$ ]] && LOCATION="$extracted_loc"
 fi
 STORAGE_NAME="stvectorplayground"
 FOUNDRY_NAME="vectorplayground-${ENV_NAME}"
@@ -131,40 +136,51 @@ log_info "  expected foundry subdomain: ${FOUNDRY_NAME}"
 
 preflight_failed=false
 
-# Storage account name (globally unique)
-storage_available=$(az storage account check-name --name "$STORAGE_NAME" --query nameAvailable -o tsv 2>/dev/null || echo "")
-if [[ "$storage_available" == "true" ]]; then
-  log_success "  storage name '$STORAGE_NAME' is available"
-else
-  storage_reason=$(az storage account check-name --name "$STORAGE_NAME" --query message -o tsv 2>/dev/null || echo "unknown")
-  log_error "  storage name '$STORAGE_NAME' is NOT available: $storage_reason"
+# Storage account name (globally unique) — single API call returns both fields
+storage_check=$(az storage account check-name --name "$STORAGE_NAME" \
+  --query "[nameAvailable, message]" -o tsv 2>/dev/null || echo "")
+if [[ -z "$storage_check" ]]; then
+  log_error "  could not verify storage name availability"
   preflight_failed=true
+else
+  storage_available=$(printf '%s\n' "$storage_check" | head -1)
+  storage_reason=$(printf '%s\n' "$storage_check" | sed -n '2p')
+  if [[ "$storage_available" == "True" || "$storage_available" == "true" ]]; then
+    log_success "  storage name '$STORAGE_NAME' is available"
+  else
+    log_error "  storage name '$STORAGE_NAME' is NOT available: ${storage_reason:-unknown}"
+    preflight_failed=true
+  fi
 fi
 
 # Cognitive Services custom subdomain (globally unique, survives soft-delete)
-soft_deleted=$(az cognitiveservices account list-deleted \
-  --query "[?name=='$FOUNDRY_NAME'] | [0].{name:name, location:location, rg:resourceGroup}" \
-  -o json 2>/dev/null || echo "null")
-if [[ "$soft_deleted" != "null" && -n "$soft_deleted" ]]; then
-  log_error "  foundry subdomain '$FOUNDRY_NAME' is held by a SOFT-DELETED account: $soft_deleted"
+soft_deleted_name=$(az cognitiveservices account list-deleted \
+  --query "[?name=='$FOUNDRY_NAME'] | [0].name" -o tsv 2>/dev/null || echo "")
+if [[ -n "$soft_deleted_name" && "$soft_deleted_name" != "None" ]]; then
+  sd_loc=$(az cognitiveservices account list-deleted \
+    --query "[?name=='$FOUNDRY_NAME'] | [0].location" -o tsv 2>/dev/null || echo "")
+  sd_rg=$(az cognitiveservices account list-deleted \
+    --query "[?name=='$FOUNDRY_NAME'] | [0].resourceGroup" -o tsv 2>/dev/null || echo "")
+  log_error "  foundry subdomain '$FOUNDRY_NAME' is held by a SOFT-DELETED account"
   log_error "  Purge it before migrating:"
-  sd_loc=$(echo "$soft_deleted" | grep -o '"location":[^,}]*' | sed 's/.*"\([^"]*\)"$/\1/')
-  sd_rg=$(echo "$soft_deleted" | grep -o '"rg":[^,}]*' | sed 's/.*"\([^"]*\)"$/\1/')
   log_error "    az cognitiveservices account purge --name '$FOUNDRY_NAME' --location '${sd_loc:-$LOCATION}' --resource-group '${sd_rg:-rg-vectorplayground}'"
   preflight_failed=true
 else
-  # Also check active domain availability via REST
-  domain_body=$(az rest --method post \
+  if domain_available=$(az rest --method post \
     --url "https://management.azure.com/subscriptions/$CURRENT_SUB/providers/Microsoft.CognitiveServices/checkDomainAvailability?api-version=2023-05-01" \
     --body "{\"subdomainName\":\"$FOUNDRY_NAME\",\"type\":\"Microsoft.CognitiveServices/accounts\"}" \
-    -o json 2>/dev/null || echo "")
-  domain_available=$(echo "$domain_body" | grep -o '"isSubdomainAvailable":[^,}]*' | awk -F: '{print $2}' | tr -d ' ')
-  if [[ "$domain_available" == "true" ]]; then
-    log_success "  foundry subdomain '$FOUNDRY_NAME' is available"
-  elif [[ -z "$domain_available" ]]; then
-    log_warn "  could not verify foundry subdomain availability (continuing)"
+    --query isSubdomainAvailable -o tsv 2>/dev/null); then
+    if [[ "$domain_available" == "true" ]]; then
+      log_success "  foundry subdomain '$FOUNDRY_NAME' is available"
+    elif [[ -z "$domain_available" ]]; then
+      log_error "  could not verify foundry subdomain availability (empty response)"
+      preflight_failed=true
+    else
+      log_error "  foundry subdomain '$FOUNDRY_NAME' is NOT available (in active use elsewhere)"
+      preflight_failed=true
+    fi
   else
-    log_error "  foundry subdomain '$FOUNDRY_NAME' is NOT available (in active use elsewhere)"
+    log_error "  failed to check foundry subdomain availability"
     preflight_failed=true
   fi
 fi
