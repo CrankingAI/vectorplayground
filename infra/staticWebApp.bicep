@@ -18,7 +18,7 @@ param wwwCustomDomain string = ''
 
 // ── Static Web App ──────────────────────────────────────────────────────────────
 
-var staticWebAppName = 'stapp-vectorplayground-${environmentName}'
+var staticWebAppName = 'stapp-vectorplayground'
 
 resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
   name: staticWebAppName

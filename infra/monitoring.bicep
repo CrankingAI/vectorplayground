@@ -6,7 +6,7 @@ param location string
 
 // ── Log Analytics Workspace ─────────────────────────────────────────────────────
 
-var lawName = 'law-vectorplayground-${environmentName}'
+var lawName = 'law-vectorplayground'
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: lawName
@@ -25,7 +25,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
 
 // ── Application Insights ────────────────────────────────────────────────────────
 
-var appInsightsName = 'appi-vectorplayground-${environmentName}'
+var appInsightsName = 'appi-vectorplayground'
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName

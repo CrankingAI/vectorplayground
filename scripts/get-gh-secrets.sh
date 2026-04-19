@@ -45,8 +45,8 @@ log_error()   { echo -e "\033[31m[x]\033[0m $*"; }
 command -v az >/dev/null 2>&1 || { log_error "Azure CLI (az) is required"; exit 1; }
 
 RG="rg-vectorplayground"
-SWA_NAME="stapp-vectorplayground-prod"
-FUNC_NAME="func-vectorplayground-prod"
+SWA_NAME="stapp-vectorplayground"
+FUNC_NAME="func-vectorplayground"
 
 az account set --subscription "$SUBSCRIPTION"
 

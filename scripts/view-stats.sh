@@ -33,7 +33,7 @@ EOF
 MODE="summary"
 TIMESPAN="1d"
 SUBSCRIPTION="379168a0-b9fc-4fa0-a3cd-ce32ab20ee70"
-APP_INSIGHTS="appi-vectorplayground-prod"
+APP_INSIGHTS="appi-vectorplayground"
 RG="rg-vectorplayground"
 
 while [[ $# -gt 0 ]]; do

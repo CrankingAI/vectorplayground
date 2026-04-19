@@ -47,7 +47,7 @@ if [[ -z "$DRY_RUN" ]]; then
   log_info "Fetching Foundry API key..."
   export FOUNDRY_API_KEY
   FOUNDRY_API_KEY=$(az cognitiveservices account keys list \
-    --name "vectorplayground-prod" \
+    --name "vectorplayground" \
     --resource-group "rg-vectorplayground" \
     --query "key1" -o tsv)
 fi

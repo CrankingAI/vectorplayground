@@ -18,7 +18,7 @@ param appInsightsConnectionString string
 
 // ── App Service Plan ────────────────────────────────────────────────────────────
 
-var planName = 'plan-vectorplayground-${environmentName}'
+var planName = 'plan-vectorplayground'
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: planName
@@ -49,7 +49,7 @@ resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview
 
 // ── Function App ────────────────────────────────────────────────────────────────
 
-var functionAppName = 'func-vectorplayground-${environmentName}'
+var functionAppName = 'func-vectorplayground'
 
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   name: functionAppName

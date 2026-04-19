@@ -22,7 +22,7 @@ type EmbeddingModelDefinition = {
 
 // ── AI Services Account ─────────────────────────────────────────────────────────
 
-var accountName = 'vectorplayground-${environmentName}'
+var accountName = 'vectorplayground'
 
 resource aiServices 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = {
   name: accountName
