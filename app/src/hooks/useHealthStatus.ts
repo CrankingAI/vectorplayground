@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 interface ReadinessResponse {
   status: string;
@@ -28,7 +29,7 @@ export function useHealthStatus(): HealthStatus {
 
     const check = async () => {
       try {
-        const res = await fetch('/api/readyz');
+        const res = await fetch(`${API_BASE_URL}/readyz`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: ReadinessResponse = await res.json();
         const readinessStatus = data.status ?? data.Status ?? 'unavailable';

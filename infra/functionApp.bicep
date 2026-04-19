@@ -90,6 +90,48 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
+// ── Staging Deployment Slot ────────────────────────────────────────────────────
+
+@description('Staging deployment slot for PR preview environments.')
+resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = {
+  parent: functionApp
+  name: 'staging'
+  location: location
+  kind: 'functionapp,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    httpsOnly: true
+    siteConfig: {
+      linuxFxVersion: 'DOTNET-ISOLATED|10.0'
+      alwaysOn: false
+      ftpsState: 'Disabled'
+      minTlsVersion: '1.2'
+      healthCheckPath: '/api/livez'
+      cors: {
+        allowedOrigins: [
+          '*'
+        ]
+      }
+      appSettings: [
+        { name: 'AzureWebJobsStorage', value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=core.windows.net;AccountKey=${storageAccount.listKeys().keys[0].value}' }
+        { name: 'WEBSITE_RUN_FROM_PACKAGE', value: '1' }
+        { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
+        { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'dotnet-isolated' }
+        { name: 'Foundry__Endpoint', value: foundryEndpoint }
+        { name: 'Foundry__ApiKey', value: foundryAccount.listKeys().key1 }
+        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
+      ]
+    }
+  }
+  tags: {
+    project: 'vectorplayground'
+    environment: '${environmentName}-staging'
+  }
+}
+
 // ── Outputs ─────────────────────────────────────────────────────────────────────
 
 @description('Function App resource name.')
@@ -100,3 +142,6 @@ output functionAppId string = functionApp.id
 
 @description('Function App default hostname.')
 output functionAppHostname string = functionApp.properties.defaultHostName
+
+@description('Staging slot default hostname for PR preview environments.')
+output stagingSlotHostname string = stagingSlot.properties.defaultHostName
