@@ -96,6 +96,9 @@ output staticWebAppDefaultHostname string = staticWebApp.outputs.defaultHostname
 @description('Name of the Function App resource.')
 output functionAppName string = functionApp.outputs.functionAppName
 
+@description('Default hostname of the staging slot used by PR preview environments.')
+output stagingSlotHostname string = functionApp.outputs.stagingSlotHostname
+
 @description('Azure AI Foundry endpoint URL.')
 output foundryEndpoint string = foundry.outputs.foundryEndpoint
 
