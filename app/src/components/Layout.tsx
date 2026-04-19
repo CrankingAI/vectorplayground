@@ -18,19 +18,8 @@ import SchoolIcon from '@mui/icons-material/School';
 import HistoryIcon from '@mui/icons-material/History';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { useHealthStatus } from '../hooks/useHealthStatus';
-
-function GitHubStarButton() {
-  return (
-    <Box
-      component="iframe"
-      src="https://ghbtns.com/github-btn.html?user=CrankingAI&repo=vectorplayground&type=star&count=true&size=large"
-      sx={{ border: 0, overflow: 'hidden', width: 170, height: 30 }}
-      scrolling="no"
-      title="Star CrankingAI/vectorplayground on GitHub"
-    />
-  );
-}
 
 const navItems = [
   { label: 'Playground', path: '/', icon: <ScienceIcon /> },
@@ -122,7 +111,15 @@ export default function Layout() {
               sx={{ height: 28, verticalAlign: 'middle' }}
             />
           </Link>
-          <GitHubStarButton />
+          <Link
+            href="https://github.com/CrankingAI/vectorplayground"
+            target="_blank"
+            rel="noopener"
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}
+          >
+            <GitHubIcon fontSize="small" />
+            <Typography variant="body2">Source</Typography>
+          </Link>
         </Stack>
       </Box>
     </Box>
