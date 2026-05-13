@@ -1,3 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text y="0.9em" font-size="80">🧠</text>
+  <g stroke-linecap="round">
+    <line x1="22" y1="78" x2="72" y2="18" stroke="#7c4dff" stroke-width="14"/>
+    <line x1="22" y1="78" x2="86" y2="48" stroke="#00e5ff" stroke-width="14"/>
+  </g>
+  <circle cx="72" cy="18" r="11" fill="#7c4dff"/>
+  <circle cx="86" cy="48" r="11" fill="#00e5ff"/>
 </svg>

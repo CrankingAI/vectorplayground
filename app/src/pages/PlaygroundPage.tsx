@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Button,
   Card,
   CardContent,
-  Chip,
+  ListSubheader,
+  Menu,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -12,33 +15,63 @@ import {
   CircularProgress,
 } from '@mui/material';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ModelSelector from '../components/ModelSelector';
 import SimilarityResult from '../components/SimilarityResult';
-import { useCompare, type CompareResult } from '../hooks/useCompare';
+import { useCompare, type CompareResult, type MultiModelResult } from '../hooks/useCompare';
+import { PRESET_GROUPS } from '../data/presets';
+import { ALL_MODEL_IDS } from '../data/models';
 
-const EXAMPLE_PAIRS = [
-  { phrase1: 'dog', phrase2: 'cat', label: 'Animals' },
-  { phrase1: 'happy', phrase2: 'sad', label: 'Opposites' },
-  { phrase1: 'thank you', phrase2: 'gracias', label: 'Languages' },
-  { phrase1: 'doctor', phrase2: 'physician', label: 'Synonyms' },
-  { phrase1: 'cup', phrase2: 'CUP', label: 'Capitalization' },
-  { phrase1: 'king - man + woman', phrase2: 'queen', label: 'Arithmetic' },
-];
+type ResultEntry = CompareResult | MultiModelResult;
+
+const DEFAULT_MODEL = 'text-embedding-3-small';
 
 export default function PlaygroundPage() {
-  const [phrase1, setPhrase1] = useState('');
-  const [phrase2, setPhrase2] = useState('');
-  const [model, setModel] = useState('text-embedding-3-small');
-  const [results, setResults] = useState<CompareResult[]>([]);
-  const { compare, loading, error } = useCompare();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [phrase1, setPhrase1] = useState(searchParams.get('p1') ?? '');
+  const [phrase2, setPhrase2] = useState(searchParams.get('p2') ?? '');
+  const [model, setModel] = useState(searchParams.get('model') ?? DEFAULT_MODEL);
+  const [allModels, setAllModels] = useState(searchParams.get('all') === '1');
+  const [results, setResults] = useState<ResultEntry[]>([]);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const { compare, compareAcrossModels, loading, error } = useCompare();
+  const autoRanRef = useRef(false);
+
+  const runCompare = async (p1: string, p2: string, m: string, all: boolean) => {
+    const r = all
+      ? await compareAcrossModels(p1, p2, ALL_MODEL_IDS)
+      : await compare(p1, p2, m);
+    if (r) setResults((prev) => [r, ...prev]);
+  };
+
+  const updateUrl = (p1: string, p2: string, m: string, all: boolean) => {
+    const params: Record<string, string> = { p1, p2 };
+    if (all) params.all = '1';
+    else params.model = m;
+    setSearchParams(params, { replace: false });
+  };
 
   const handleCompare = async () => {
     if (!phrase1.trim() || !phrase2.trim()) return;
-    const result = await compare(phrase1.trim(), phrase2.trim(), model);
-    if (result) {
-      setResults((prev) => [result, ...prev]);
-    }
+    const p1 = phrase1.trim();
+    const p2 = phrase2.trim();
+    updateUrl(p1, p2, model, allModels);
+    await runCompare(p1, p2, model, allModels);
   };
+
+  useEffect(() => {
+    if (autoRanRef.current) return;
+    autoRanRef.current = true;
+    const p1 = (searchParams.get('p1') ?? '').trim();
+    const p2 = (searchParams.get('p2') ?? '').trim();
+    if (p1 && p2) {
+      const m = searchParams.get('model') ?? DEFAULT_MODEL;
+      const all = searchParams.get('all') === '1';
+      runCompare(p1, p2, m, all);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -47,9 +80,10 @@ export default function PlaygroundPage() {
     }
   };
 
-  const handleExample = (p1: string, p2: string) => {
+  const handlePreset = (p1: string, p2: string) => {
     setPhrase1(p1);
     setPhrase2(p2);
+    setMenuAnchor(null);
   };
 
   return (
@@ -85,8 +119,47 @@ export default function PlaygroundPage() {
               />
             </Stack>
 
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-              <ModelSelector model={model} onChange={setModel} />
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              flexWrap="wrap"
+              useFlexGap
+            >
+              <ModelSelector
+                model={model}
+                onChange={setModel}
+                allModels={allModels}
+                onAllModelsChange={setAllModels}
+              />
+              <Button
+                variant="outlined"
+                size="medium"
+                startIcon={<LibraryBooksIcon />}
+                endIcon={<ArrowDropDownIcon />}
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+              >
+                Load example
+              </Button>
+              <Menu
+                anchorEl={menuAnchor}
+                open={!!menuAnchor}
+                onClose={() => setMenuAnchor(null)}
+              >
+                {PRESET_GROUPS.flatMap((group) => [
+                  <ListSubheader key={`hdr-${group.label}`}>{group.label}</ListSubheader>,
+                  ...group.items.map((item) => (
+                    <MenuItem
+                      key={`${group.label}-${item.p1}-${item.p2}`}
+                      onClick={() => handlePreset(item.p1, item.p2)}
+                      sx={{ fontFamily: 'monospace' }}
+                    >
+                      {item.p1} &nbsp;↔&nbsp; {item.p2}
+                    </MenuItem>
+                  )),
+                ])}
+              </Menu>
+              <Box sx={{ flexGrow: 1 }} />
               <Button
                 variant="contained"
                 size="large"
@@ -108,24 +181,8 @@ export default function PlaygroundPage() {
         </Alert>
       )}
 
-      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        Try an example:
-      </Typography>
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
-        {EXAMPLE_PAIRS.map((ex) => (
-          <Chip
-            key={ex.label}
-            label={`${ex.phrase1} vs ${ex.phrase2}`}
-            variant="outlined"
-            size="small"
-            onClick={() => handleExample(ex.phrase1, ex.phrase2)}
-            sx={{ cursor: 'pointer' }}
-          />
-        ))}
-      </Stack>
-
       {results.map((result, i) => (
-        <SimilarityResult key={`${result.phrase1}-${result.phrase2}-${result.model}-${i}`} result={result} />
+        <SimilarityResult key={`${result.phrase1}-${result.phrase2}-${i}`} result={result} />
       ))}
     </Box>
   );
