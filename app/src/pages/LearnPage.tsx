@@ -20,6 +20,7 @@ import CompareIcon from '@mui/icons-material/Compare';
 import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import StraightenIcon from '@mui/icons-material/Straighten';
+import TuneIcon from '@mui/icons-material/Tune';
 
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
@@ -92,6 +93,102 @@ export default function LearnPage() {
               <li><strong>0.3&ndash;0.5</strong>: Loosely connected (e.g., "dog" / "car")</li>
               <li><strong>Below 0.3</strong>: Little to no semantic relationship</li>
             </ul>
+          </Typography>
+          <Typography sx={{ mt: 1 }}>
+            <em>These ranges apply to the <code>text-embedding-3</code> models. Older models
+            like <code>text-embedding-ada-002</code> use a different effective scale &mdash; see
+            the next section.</em>
+          </Typography>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Score scale & anisotropy */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <SectionHeader icon={<TuneIcon color="primary" />} title="Why Scores Don't Compare Across Models" />
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography paragraph>
+            Cosine similarity returns a single number, but the <strong>scale that number lives on</strong>
+            is different for every model. Each model has its own &ldquo;noise floor&rdquo; &mdash; the
+            similarity it tends to produce for completely <em>unrelated</em> text. To interpret a score,
+            you have to know that floor.
+          </Typography>
+          <Typography paragraph>
+            Roughly, in this playground:
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell><strong>Model</strong></TableCell>
+                  <TableCell><strong>Typical score for unrelated pairs</strong></TableCell>
+                  <TableCell><strong>Score that means &ldquo;actually similar&rdquo;</strong></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                <TableRow>
+                  <TableCell><code>text-embedding-ada-002</code></TableCell>
+                  <TableCell>~0.70&ndash;0.80</TableCell>
+                  <TableCell>&ge; ~0.88</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell><code>text-embedding-3-small</code></TableCell>
+                  <TableCell>~0.10&ndash;0.20</TableCell>
+                  <TableCell>&ge; ~0.70</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell><code>text-embedding-3-large</code></TableCell>
+                  <TableCell>~0.10&ndash;0.20</TableCell>
+                  <TableCell>&ge; ~0.70</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Typography paragraph>
+            So <strong>0.78 in Ada 002 is essentially noise</strong> &mdash; while 0.78 in 3-small or
+            3-large is genuinely strong semantic similarity. Try it yourself: enter a nonsense token
+            like <code>adsf3</code> against <code>banana</code> on the Playground tab with
+            &ldquo;All models&rdquo; turned on. Ada 002 will report ~0.78; the v3 models will report ~0.20.
+          </Typography>
+          <Typography paragraph>
+            <strong>Why does this happen?</strong> The Ada 002 embedding space is <em>anisotropic</em>:
+            its vectors don&apos;t fan out evenly across the high-dimensional sphere &mdash; they bunch
+            together in a narrow cone. Any two vectors drawn from that cone end up with high cosine
+            similarity, even when the underlying texts have nothing to do with each other.
+            The <code>text-embedding-3</code> family was specifically retrained to fix this and produces
+            much more <em>isotropic</em> embeddings, where unrelated pairs score near zero.
+          </Typography>
+          <Typography paragraph>
+            Practical takeaways:
+          </Typography>
+          <Typography component="div">
+            <ul>
+              <li>
+                Don&apos;t compare absolute percentages across models &mdash; compare each score
+                against <em>that model&apos;s</em> baseline.
+              </li>
+              <li>
+                The Playground&apos;s &ldquo;Very similar / Loosely related / Not similar&rdquo; labels
+                are calibrated for the v3 models. They overstate similarity for Ada 002.
+              </li>
+              <li>
+                If you&apos;re thresholding cosine similarity in production (e.g., for RAG retrieval),
+                pick the threshold empirically per model. A value of 0.80 means very different things
+                in Ada 002 vs.&nbsp;3-large.
+              </li>
+              <li>
+                This is one of several reasons to prefer <code>text-embedding-3-small</code> or
+                <code> text-embedding-3-large</code> over Ada 002 for new work.
+              </li>
+            </ul>
+          </Typography>
+          <Typography sx={{ mt: 1 }}>
+            Further reading:{' '}
+            <Link href="https://arxiv.org/abs/1909.00512" target="_blank" rel="noopener">
+              How Contextual are Contextualized Word Representations? (Ethayarajh, 2019)
+            </Link>
+            {' '}is the canonical empirical study of anisotropy in transformer embeddings.
           </Typography>
         </AccordionDetails>
       </Accordion>
