@@ -35,8 +35,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-log_info()    { echo -e "\033[34m[i]\033[0m $*"; }
-log_success() { echo -e "\033[32m[+]\033[0m $*"; }
+log_info()    { echo "ℹ️  $*"; }
+log_success() { echo "✅ $*"; }
 
 # Step 1: Deploy infrastructure
 log_info "Phase 1: Deploying infrastructure..."

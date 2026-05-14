@@ -14,6 +14,7 @@ import {
   Link,
 } from '@mui/material';
 import ScienceIcon from '@mui/icons-material/Science';
+import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import SchoolIcon from '@mui/icons-material/School';
 import HistoryIcon from '@mui/icons-material/History';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -23,6 +24,7 @@ import { useHealthStatus } from '../hooks/useHealthStatus';
 
 const navItems = [
   { label: 'Playground', path: '/', icon: <ScienceIcon /> },
+  { label: 'Misspellings', path: '/misspellings', icon: <SpellcheckIcon /> },
   { label: 'Learn', path: '/learn', icon: <SchoolIcon /> },
   { label: 'History', path: '/history', icon: <HistoryIcon /> },
 ];

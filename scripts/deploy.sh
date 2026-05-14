@@ -44,10 +44,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Logging helpers
-log_info()    { echo -e "\033[34m[i]\033[0m $*"; }
-log_success() { echo -e "\033[32m[+]\033[0m $*"; }
-log_warn()    { echo -e "\033[33m[!]\033[0m $*"; }
-log_error()   { echo -e "\033[31m[x]\033[0m $*"; }
+log_info()    { echo "ℹ️  $*"; }
+log_success() { echo "✅ $*"; }
+log_warn()    { echo "⚠️  $*"; }
+log_error()   { echo "❌ $*"; }
 
 format_duration() {
   local seconds=$1
