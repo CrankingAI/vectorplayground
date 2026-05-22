@@ -50,7 +50,7 @@ export default function MisspellingsPage() {
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Compare a word against its common misspellings across all three embedding models.
-        Strong embeddings should treat a word and its near-typos as highly similar.
+        Embeddings often see typos as similar to intended spellings.
       </Typography>
 
       <Typography variant="h6" gutterBottom>
