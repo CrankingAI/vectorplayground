@@ -21,6 +21,7 @@ import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import TuneIcon from '@mui/icons-material/Tune';
+import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
@@ -441,6 +442,55 @@ export default function LearnPage() {
               </TableBody>
             </Table>
           </TableContainer>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Videos */}
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <SectionHeader icon={<OndemandVideoIcon color="primary" />} title="Videos" />
+        </AccordionSummary>
+        <AccordionDetails>
+          <Typography paragraph>
+            A short, accessible walkthrough of vector embeddings and why they matter:
+          </Typography>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 800,
+              aspectRatio: '16 / 9',
+              mb: 2,
+              borderRadius: 1,
+              overflow: 'hidden',
+              boxShadow: 1,
+            }}
+          >
+            <Box
+              component="iframe"
+              src="https://www.youtube-nocookie.com/embed/K1teGEQ0uc4"
+              title="Vector embeddings explained"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                border: 0,
+              }}
+            />
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            <Link
+              href="https://www.youtube.com/watch?v=K1teGEQ0uc4"
+              target="_blank"
+              rel="noopener"
+            >
+              Watch on YouTube
+            </Link>
+          </Typography>
         </AccordionDetails>
       </Accordion>
     </Box>
