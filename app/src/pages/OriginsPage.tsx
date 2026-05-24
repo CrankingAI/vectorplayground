@@ -1,10 +1,10 @@
 import { Box, Link, Paper, Typography } from '@mui/material';
 
-export default function HistoryPage() {
+export default function OriginsPage() {
   return (
     <Box sx={{ maxWidth: 760, mx: 'auto' }}>
       <Typography variant="h4" gutterBottom>
-        A Bit of History
+        Origins
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Vector Playground is a new generation of what used to live at{' '}

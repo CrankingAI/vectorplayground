@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -16,7 +15,6 @@ import {
 import ScienceIcon from '@mui/icons-material/Science';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import SchoolIcon from '@mui/icons-material/School';
-import HistoryIcon from '@mui/icons-material/History';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -24,9 +22,8 @@ import { useHealthStatus } from '../hooks/useHealthStatus';
 
 const navItems = [
   { label: 'Playground', path: '/', icon: <ScienceIcon /> },
-  { label: 'Misspellings', path: '/misspellings', icon: <SpellcheckIcon /> },
+  { label: 'Confusables', path: '/confusables', icon: <SpellcheckIcon /> },
   { label: 'Learn', path: '/learn', icon: <SchoolIcon /> },
-  { label: 'History', path: '/history', icon: <HistoryIcon /> },
 ];
 
 export default function Layout() {
@@ -35,10 +32,9 @@ export default function Layout() {
   const { isHealthy, isLoading, version } = useHealthStatus();
 
   const tabIndex = navItems.findIndex((item) => item.path === location.pathname);
-  const [value, setValue] = useState(tabIndex >= 0 ? tabIndex : 0);
+  const value: number | false = tabIndex >= 0 ? tabIndex : false;
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue);
     navigate(navItems[newValue].path);
   };
 
@@ -83,7 +79,7 @@ export default function Layout() {
         <Toolbar>
           <Typography variant="h5" component="div"
             sx={{ mr: 4, cursor: 'pointer', color: 'primary.main' }}
-            onClick={() => { setValue(0); navigate('/'); }}>
+            onClick={() => navigate('/')}>
             Vector Playground
           </Typography>
           <Tabs value={value} onChange={handleTabChange}
@@ -112,6 +108,14 @@ export default function Layout() {
               alt="Cranking AI"
               sx={{ height: 28, verticalAlign: 'middle' }}
             />
+          </Link>
+          <Link
+            component="button"
+            type="button"
+            onClick={() => navigate('/origins')}
+            sx={{ color: 'text.secondary', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+          >
+            <Typography variant="body2">Origins</Typography>
           </Link>
           <Link
             href="https://github.com/CrankingAI/vectorplayground"
