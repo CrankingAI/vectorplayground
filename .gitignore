@@ -33,3 +33,6 @@ Thumbs.db
 # Build artifacts
 *.zip
 publish/
+
+# Test artifacts
+.playwright-mcp/

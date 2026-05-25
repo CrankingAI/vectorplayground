@@ -62,3 +62,41 @@ export const PRESET_GROUPS: PresetGroup[] = [
 ];
 
 export const MISSPELLING_PRESETS = PRESET_GROUPS.find((g) => g.label === 'Misspellings')!.items;
+
+export const CONFUSABLE_GROUPS: PresetGroup[] = [
+  {
+    label: 'Misspellings',
+    items: MISSPELLING_PRESETS,
+  },
+  {
+    label: 'Homophones',
+    items: [
+      { p1: 'their', p2: 'there' },
+      { p1: 'their', p2: "they're" },
+      { p1: 'your', p2: "you're" },
+      { p1: 'to', p2: 'too' },
+      { p1: 'its', p2: "it's" },
+      { p1: 'principal', p2: 'principle' },
+    ],
+  },
+  {
+    label: 'Commonly confused words',
+    items: [
+      { p1: 'affect', p2: 'effect' },
+      { p1: 'then', p2: 'than' },
+      { p1: 'lose', p2: 'loose' },
+      { p1: 'complement', p2: 'compliment' },
+      { p1: 'discreet', p2: 'discrete' },
+      { p1: 'farther', p2: 'further' },
+    ],
+  },
+  {
+    label: 'Phrase confusables',
+    items: [
+      { p1: 'for all intents and purposes', p2: 'for all intensive purposes' },
+      { p1: "I couldn't care less", p2: 'I could care less' },
+      { p1: 'nip it in the bud', p2: 'nip it in the butt' },
+      { p1: 'a moot point', p2: 'a mute point' },
+    ],
+  },
+];
