@@ -29,7 +29,7 @@ export default function ModelSelector({ model, onChange, allModels, onAllModelsC
         <Select value={model} label="Embedding Model" onChange={handleChange}>
           {MODELS.map((m) => (
             <MenuItem key={m.id} value={m.id}>
-              {m.label} ({m.dimensions}d) &mdash; {m.note}
+              {m.label} ({m.dimensions}d, released {m.released}) &mdash; {m.note}
             </MenuItem>
           ))}
         </Select>

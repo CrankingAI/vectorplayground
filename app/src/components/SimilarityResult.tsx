@@ -1,7 +1,7 @@
 import { Box, LinearProgress, Typography, Paper, Chip, Stack, Alert, Tooltip, IconButton } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import type { CompareResult, MultiModelResult, ModelComparison } from '../hooks/useCompare';
-import { getModelLabel, getSimilarityInfo } from '../data/models';
+import { getModelLabel, getModelReleased, getSimilarityInfo } from '../data/models';
 
 const ADA_MODEL_ID = 'text-embedding-ada-002';
 const ADA_BASELINE_NOTE =
@@ -60,6 +60,7 @@ function ModelRow({ row }: { row: ModelComparison }) {
   const percentage = Math.max(0, similarity * 100);
   const { label, color } = getSimilarityInfo(similarity, row.model);
   const isAda = row.model === ADA_MODEL_ID;
+  const released = getModelReleased(row.model);
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
@@ -67,6 +68,9 @@ function ModelRow({ row }: { row: ModelComparison }) {
           <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{getModelLabel(row.model)}</Typography>
           {row.dimensions !== undefined && (
             <Typography variant="caption" color="text.secondary">{row.dimensions}d</Typography>
+          )}
+          {released !== undefined && (
+            <Typography variant="caption" color="text.secondary">&middot; released {released}</Typography>
           )}
           {isAda && <AdaBaselineHint />}
         </Stack>
@@ -107,6 +111,10 @@ export default function SimilarityResult({ result }: SimilarityResultProps) {
   const percentage = Math.max(0, result.similarity * 100);
   const { label, color } = getSimilarityInfo(result.similarity, result.model);
   const isAda = result.model === ADA_MODEL_ID;
+  const released = getModelReleased(result.model);
+  const modelChipLabel = released !== undefined
+    ? `${getModelLabel(result.model)} · released ${released}`
+    : getModelLabel(result.model);
 
   return (
     <Paper sx={{ p: 3, mt: 2 }}>
@@ -125,7 +133,7 @@ export default function SimilarityResult({ result }: SimilarityResultProps) {
       />
 
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
-        <Chip label={getModelLabel(result.model)} size="small" variant="outlined" />
+        <Chip label={modelChipLabel} size="small" variant="outlined" />
         <Chip label={`${result.dimensions} dimensions`} size="small" variant="outlined" />
         {isAda && <AdaBaselineHint />}
       </Stack>
