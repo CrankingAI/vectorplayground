@@ -458,6 +458,7 @@ export default function LearnPage() {
             href="https://www.youtube.com/watch?v=K1teGEQ0uc4"
             target="_blank"
             rel="noopener"
+            aria-label="Watch Vector embeddings explained on YouTube"
             sx={{ display: 'block', maxWidth: 800, mb: 2 }}
           >
             <Box
@@ -519,6 +520,7 @@ export default function LearnPage() {
             href="https://www.youtube.com/watch?v=fZH97QHHYjY"
             target="_blank"
             rel="noopener"
+            aria-label="Watch vector embeddings deep dive on YouTube"
             sx={{ display: 'block', maxWidth: 800 }}
           >
             <Box
