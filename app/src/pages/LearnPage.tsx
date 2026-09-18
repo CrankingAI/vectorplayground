@@ -515,6 +515,67 @@ export default function LearnPage() {
               </Box>
             </Box>
           </Link>
+          <Link
+            href="https://www.youtube.com/watch?v=fZH97QHHYjY"
+            target="_blank"
+            rel="noopener"
+            sx={{ display: 'block', maxWidth: 800 }}
+          >
+            <Box
+              sx={{
+                position: 'relative',
+                width: '100%',
+                aspectRatio: '16 / 9',
+                borderRadius: 1,
+                overflow: 'hidden',
+                boxShadow: 1,
+                '&:hover .play-overlay': { opacity: 0.9 },
+              }}
+            >
+              <Box
+                component="img"
+                src="https://img.youtube.com/vi/fZH97QHHYjY/hqdefault.jpg"
+                alt="Vector embeddings deep dive"
+                sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <Box
+                className="play-overlay"
+                sx={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'rgba(0,0,0,0.4)',
+                  opacity: 0.7,
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 68,
+                    height: 48,
+                    bgcolor: '#ff0000',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 0,
+                      height: 0,
+                      borderStyle: 'solid',
+                      borderWidth: '10px 0 10px 20px',
+                      borderColor: 'transparent transparent transparent #fff',
+                      ml: '4px',
+                    }}
+                  />
+                </Box>
+              </Box>
+            </Box>
+          </Link>
         </AccordionDetails>
       </Accordion>
     </Box>
