@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# view-stats.sh — Query Application Insights for Vector Playground usage stats
+#
+# Usage:
+#   ./scripts/view-stats.sh [mode] [--timespan <d>]
+#   ./scripts/view-stats.sh --legacy --timespan 30d
+#
+# Lifecycle: read-only — makes no changes.
+# ---------------------------------------------------------------------------
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Cloudflare zone analytics for the legacy domain. Uses Cloudflare's account-agnostic
+# deep link, so no account ID lives in this (public) repo. Read "Requests", not "Visits":
+# the zone only serves 301s, and Cloudflare counts only HTML page views as visits.
+LEGACY_EDGE_ANALYTICS_URL="https://dash.cloudflare.com/?to=/:account/funwithvectors.com/analytics/requests"
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [mode] [options]
 
 Query Application Insights for Vector Playground usage stats.
+Lifecycle: read-only — makes no changes.
 
 Modes:
   (default)       Summary dashboard (requests, top phrases, models, errors)
@@ -15,10 +28,12 @@ Modes:
   --models        Embedding model usage breakdown
   --errors        Recent failed requests
   --traffic       Request volume by hour
+  --legacy        Share of visits arriving via the legacy domain (funwithvectors.com),
+                  by day and by referrer, plus a link to Cloudflare's edge counts
 
 Options:
   --timespan <d>  KQL ago() duration (default: 1d). Examples: 1h, 7d, 30d
-  --subscription  Azure subscription ID or name
+  --subscription  Azure subscription ID or name (default: EffAz-Prod)
   -h, --help      Show this help message
 
 Examples:
@@ -26,8 +41,13 @@ Examples:
   $(basename "$0") --phrases              # Top phrase pairs
   $(basename "$0") --timespan 7d          # Last 7 days summary
   $(basename "$0") --traffic --timespan 6h  # Last 6h traffic
+  $(basename "$0") --legacy --timespan 30d  # Legacy-domain share, last 30 days
 EOF
-  exit 0
+  exit "${1:-0}"
+}
+
+require_value() {
+  [[ $# -ge 2 && -n "$2" ]] || { echo "Error: $1 requires a value" >&2; usage 1; }
 }
 
 MODE="summary"
@@ -43,16 +63,23 @@ while [[ $# -gt 0 ]]; do
     --models) MODE="models"; shift ;;
     --errors) MODE="errors"; shift ;;
     --traffic) MODE="traffic"; shift ;;
-    --timespan) TIMESPAN="$2"; shift 2 ;;
-    --subscription) SUBSCRIPTION="$2"; shift 2 ;;
-    *) echo "Unknown option: $1"; usage ;;
+    --legacy) MODE="legacy"; shift ;;
+    --timespan) require_value "$@"; TIMESPAN="$2"; shift 2 ;;
+    --subscription) require_value "$@"; SUBSCRIPTION="$2"; shift 2 ;;
+    *) echo "Error: unknown option '$1'" >&2; usage 1 ;;
   esac
 done
 
 log_info()  { echo "ℹ️  $*"; }
-log_error() { echo "❌ $*"; }
+log_error() { echo "❌ $*" >&2; }  # stderr: query_ai's stdout is piped into format_table
 
-command -v az >/dev/null 2>&1 || { echo "Azure CLI (az) is required"; exit 1; }
+command -v az >/dev/null 2>&1 || { echo "Azure CLI (az) is required: brew install azure-cli"; exit 1; }
+
+if ! az account show --subscription "$SUBSCRIPTION" --output none 2>/dev/null; then
+  echo "Error: not logged in, or no access to subscription '$SUBSCRIPTION'."
+  echo "  az login"
+  exit 1
+fi
 
 # Timespan filter injected into every KQL query
 TIME_FILTER="where timestamp > ago($TIMESPAN)"
@@ -192,5 +219,45 @@ case "$MODE" in
       | order by timestamp desc
       | take 24
     " | format_table
+    ;;
+
+  legacy)
+    # Landing page views on the production host, recorded by the frontend (app/src/analytics.ts).
+    # The Cloudflare redirect tags legacy arrivals with utm_source=funwithvectors.
+    LANDINGS="pageViews
+      | $TIME_FILTER
+      | where tostring(customDimensions.landing) == 'true' and url startswith 'https://vectorplayground.com/'
+      | extend legacy = tostring(customDimensions.utmSource) == 'funwithvectors'"
+
+    log_info "Visits arriving via the legacy domain (funwithvectors.com)"
+    query_ai "
+      $LANDINGS
+      | summarize visits=count(), legacy_visits=countif(legacy)
+      | extend legacy_pct=iff(visits == 0, real(null), round(100.0 * legacy_visits / visits, 1))
+    " | format_table
+
+    echo ""
+    log_info "By day"
+    query_ai "
+      $LANDINGS
+      | summarize visits=count(), legacy_visits=countif(legacy) by day=bin(timestamp, 1d)
+      | extend legacy_pct=round(100.0 * legacy_visits / visits, 1)
+      | order by day desc
+    " | format_table
+
+    echo ""
+    log_info "Where legacy-domain visitors came from (referrer)"
+    query_ai "
+      $LANDINGS
+      | where legacy
+      | extend referrer=coalesce(tostring(parse_url(tostring(customDimensions.refUri)).Host), '(none: typed, bookmarked, or app)')
+      | summarize visits=count() by referrer
+      | order by visits desc
+      | take 10
+    " | format_table
+
+    echo ""
+    log_info "Edge requests to the legacy domain (Cloudflare; includes bots, misses repeat visitors whose browser cached the redirect)"
+    echo "    $LEGACY_EDGE_ANALYTICS_URL"
     ;;
 esac

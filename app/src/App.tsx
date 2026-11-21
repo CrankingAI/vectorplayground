@@ -4,8 +4,11 @@ import PlaygroundPage from './pages/PlaygroundPage';
 import MisspellingsPage from './pages/MisspellingsPage';
 import LearnPage from './pages/LearnPage';
 import OriginsPage from './pages/OriginsPage';
+import { usePageViewTracking } from './hooks/usePageViewTracking';
 
 export default function App() {
+  usePageViewTracking();
+
   return (
     <Routes>
       <Route element={<Layout />}>
