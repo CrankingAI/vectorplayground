@@ -52,4 +52,5 @@ We strive for **idiomatic** use of all key technologies. This means following ea
 - Embedding models deployed via Bicep (not manually): ada-002, 3-small, 3-large
 - Vector arithmetic support in phrase inputs (e.g., `king - man + woman`)
 - SWA linked backend routes `/api/*` to the Function App
+- Function App runs on a Basic (B1) plan to keep cost down. B1 has no deployment slots, and SWA can't link a backend to pull-request environments, so PR previews are frontend-only (their `/api` calls fail).
 - Single resource group for all resources

@@ -2,7 +2,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<EOF
@@ -20,7 +19,7 @@ Examples:
   $(basename "$0")              # Full setup
   $(basename "$0") --dry-run    # Preview what would be created
 EOF
-  exit 0
+  exit "${1:-0}"
 }
 
 DRY_RUN=""
@@ -31,7 +30,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help) usage ;;
     --dry-run) DRY_RUN="--dry-run"; shift ;;
     --subscription) SUBSCRIPTION="$2"; shift 2 ;;
-    *) echo "Unknown option: $1"; usage ;;
+    *) echo "Unknown option: $1" >&2; usage 1 ;;
   esac
 done
 
@@ -47,6 +46,7 @@ if [[ -z "$DRY_RUN" ]]; then
   log_info "Fetching Foundry API key..."
   export FOUNDRY_API_KEY
   FOUNDRY_API_KEY=$(az cognitiveservices account keys list \
+    --subscription "$SUBSCRIPTION" \
     --name "vectorplayground" \
     --resource-group "rg-vectorplayground" \
     --query "key1" -o tsv)

@@ -16,17 +16,23 @@ param storageAccountName string
 @description('Application Insights connection string for telemetry.')
 param appInsightsConnectionString string
 
+@description('Application Insights resource ID, linked in the portal via the hidden-link tag.')
+param appInsightsId string
+
 // ── App Service Plan ────────────────────────────────────────────────────────────
 
 var planName = 'plan-vectorplayground'
 
+// Basic (B1) keeps cost down. It supports Always On but not deployment slots, so PR
+// preview environments are frontend-only: SWA can't link a backend to pull-request
+// environments, and the Function App rejects direct calls (only the SWA may call it).
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: planName
   location: location
   kind: 'linux'
   sku: {
-    name: 'S1'
-    tier: 'Standard'
+    name: 'B1'
+    tier: 'Basic'
   }
   properties: {
     reserved: true // Linux
@@ -62,7 +68,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     serverFarmId: appServicePlan.id
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'DOTNET-ISOLATED|10'
+      linuxFxVersion: 'DOTNET-ISOLATED|10.0'
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
@@ -87,48 +93,8 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   tags: {
     project: 'vectorplayground'
     environment: environmentName
-  }
-}
-
-// ── Staging Deployment Slot ────────────────────────────────────────────────────
-
-@description('Staging deployment slot for PR preview environments.')
-resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = {
-  parent: functionApp
-  name: 'staging'
-  location: location
-  kind: 'functionapp,linux'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    serverFarmId: appServicePlan.id
-    httpsOnly: true
-    siteConfig: {
-      linuxFxVersion: 'DOTNET-ISOLATED|10'
-      alwaysOn: false
-      ftpsState: 'Disabled'
-      minTlsVersion: '1.2'
-      healthCheckPath: '/api/livez'
-      cors: {
-        allowedOrigins: [
-          '*'
-        ]
-      }
-      appSettings: [
-        { name: 'AzureWebJobsStorage', value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=core.windows.net;AccountKey=${storageAccount.listKeys().keys[0].value}' }
-        { name: 'WEBSITE_RUN_FROM_PACKAGE', value: '1' }
-        { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
-        { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'dotnet-isolated' }
-        { name: 'Foundry__Endpoint', value: foundryEndpoint }
-        { name: 'Foundry__ApiKey', value: foundryAccount.listKeys().key1 }
-        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
-      ]
-    }
-  }
-  tags: {
-    project: 'vectorplayground'
-    environment: '${environmentName}-staging'
+    // The portal reads this tag to link the Function App to its Application Insights.
+    'hidden-link: /app-insights-resource-id': appInsightsId
   }
 }
 
@@ -142,6 +108,3 @@ output functionAppId string = functionApp.id
 
 @description('Function App default hostname.')
 output functionAppHostname string = functionApp.properties.defaultHostName
-
-@description('Staging slot default hostname for PR preview environments.')
-output stagingSlotHostname string = stagingSlot.properties.defaultHostName

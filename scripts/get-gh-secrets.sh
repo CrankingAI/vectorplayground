@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [options]
@@ -11,9 +9,8 @@ Fetch the two GitHub Actions secrets needed for CI/CD and optionally
 set them directly on the repository.
 
 Secrets retrieved:
-  SWA_DEPLOYMENT_TOKEN                      Static Web App deployment token
-  AZURE_FUNCTIONAPP_PUBLISH_PROFILE         Function App publish profile (XML)
-  AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE Function App staging slot publish profile (XML)
+  SWA_DEPLOYMENT_TOKEN               Static Web App deployment token
+  AZURE_FUNCTIONAPP_PUBLISH_PROFILE  Function App publish profile (XML)
 
 Options:
   --set           Set secrets on CrankingAI/vectorplayground via gh CLI
@@ -24,7 +21,7 @@ Examples:
   $(basename "$0")          # Print secrets to stdout
   $(basename "$0") --set    # Set secrets on GitHub repo directly
 EOF
-  exit 0
+  exit "${1:-0}"
 }
 
 SET_SECRETS=false
@@ -35,7 +32,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help) usage ;;
     --set) SET_SECRETS=true; shift ;;
     --subscription) SUBSCRIPTION="$2"; shift 2 ;;
-    *) echo "Unknown option: $1"; usage ;;
+    *) echo "Unknown option: $1" >&2; usage 1 ;;
   esac
 done
 
@@ -49,11 +46,10 @@ RG="rg-vectorplayground"
 SWA_NAME="stapp-vectorplayground"
 FUNC_NAME="func-vectorplayground"
 
-az account set --subscription "$SUBSCRIPTION"
-
 # 1. SWA deployment token
 log_info "Fetching SWA deployment token..."
 SWA_TOKEN=$(az staticwebapp secrets list \
+  --subscription "$SUBSCRIPTION" \
   --name "$SWA_NAME" \
   --resource-group "$RG" \
   --query "properties.apiKey" -o tsv)
@@ -61,16 +57,9 @@ SWA_TOKEN=$(az staticwebapp secrets list \
 # 2. Function App publish profile (production)
 log_info "Fetching Function App publish profile..."
 PUBLISH_PROFILE=$(az functionapp deployment list-publishing-profiles \
+  --subscription "$SUBSCRIPTION" \
   --name "$FUNC_NAME" \
   --resource-group "$RG" \
-  --xml)
-
-# 3. Function App publish profile (staging slot)
-log_info "Fetching Function App staging slot publish profile..."
-STAGING_PUBLISH_PROFILE=$(az functionapp deployment list-publishing-profiles \
-  --name "$FUNC_NAME" \
-  --resource-group "$RG" \
-  --slot staging \
   --xml)
 
 if [[ "$SET_SECRETS" == "true" ]]; then
@@ -86,10 +75,6 @@ if [[ "$SET_SECRETS" == "true" ]]; then
   gh secret set AZURE_FUNCTIONAPP_PUBLISH_PROFILE --repo "$REPO" --body "$PUBLISH_PROFILE"
   log_success "AZURE_FUNCTIONAPP_PUBLISH_PROFILE set"
 
-  log_info "Setting AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE on $REPO..."
-  gh secret set AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE --repo "$REPO" --body "$STAGING_PUBLISH_PROFILE"
-  log_success "AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE set"
-
   log_success "Done! Push to main and CI/CD will deploy automatically."
 else
   echo ""
@@ -98,9 +83,6 @@ else
   echo ""
   echo "=== AZURE_FUNCTIONAPP_PUBLISH_PROFILE ==="
   echo "$PUBLISH_PROFILE"
-  echo ""
-  echo "=== AZURE_FUNCTIONAPP_STAGING_PUBLISH_PROFILE ==="
-  echo "$STAGING_PUBLISH_PROFILE"
   echo ""
   log_info "To set these on GitHub automatically, re-run with --set"
   log_info "Or set manually at: https://github.com/CrankingAI/vectorplayground/settings/secrets/actions"
