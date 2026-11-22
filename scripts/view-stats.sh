@@ -226,9 +226,13 @@ case "$MODE" in
     # The Cloudflare redirect tags legacy arrivals with utm_source=funwithvectors.
     # Only the apex counts: SWA 301-redirects www and the azurestaticapps.net host to it,
     # so no page loads there. Excluding other hosts drops PR-preview and localhost views.
+    # The SDK delivers at least once: a view still in flight when the visitor leaves is
+    # resent by the next page load with the same id. Keep one row per id and url (route
+    # views share their landing's id, but this query only counts landings).
     LANDINGS="pageViews
       | $TIME_FILTER
       | where tostring(customDimensions.landing) == 'true' and url startswith 'https://vectorplayground.com/'
+      | summarize arg_min(timestamp, *) by id, url
       | extend legacy = tostring(customDimensions.utmSource) == 'funwithvectors'"
 
     log_info "Visits arriving via the legacy domain (funwithvectors.com)"
