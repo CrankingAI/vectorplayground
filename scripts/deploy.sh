@@ -14,7 +14,7 @@ Options:
   --infra-only    Deploy only Bicep infrastructure (skip code)
   --code-only     Deploy only application code (skip infra)
   --dry-run       Show what would be deployed without making changes
-  --subscription  Azure subscription ID or name (default: 379168a0-b9fc-4fa0-a3cd-ce32ab20ee70)
+  --subscription  Azure subscription ID or name (default: EffAz-Prod)
   -h, --help      Show this help message
 
 Examples:
@@ -23,14 +23,14 @@ Examples:
   $(basename "$0") --code-only        # Code only
   $(basename "$0") --dry-run          # Preview changes
 EOF
-  exit 0
+  exit "${1:-0}"
 }
 
 # Parse arguments
 INFRA_ONLY=false
 CODE_ONLY=false
 DRY_RUN=false
-SUBSCRIPTION="379168a0-b9fc-4fa0-a3cd-ce32ab20ee70"
+SUBSCRIPTION="EffAz-Prod"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
     --code-only) CODE_ONLY=true; shift ;;
     --dry-run) DRY_RUN=true; shift ;;
     --subscription) SUBSCRIPTION="$2"; shift 2 ;;
-    *) echo "Unknown option: $1"; usage ;;
+    *) echo "Unknown option: $1" >&2; usage 1 ;;
   esac
 done
 

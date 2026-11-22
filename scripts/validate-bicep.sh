@@ -18,7 +18,7 @@ Examples:
   $(basename "$0")                     # Validate all Bicep files
   $(basename "$0") --subscription X    # Use specific subscription
 EOF
-  exit 0
+  exit "${1:-0}"
 }
 
 SUBSCRIPTION="EffAz-Prod"
@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help) usage ;;
     --subscription) SUBSCRIPTION="$2"; shift 2 ;;
-    *) echo "Unknown option: $1"; usage ;;
+    *) echo "Unknown option: $1" >&2; usage 1 ;;
   esac
 done
 
@@ -36,8 +36,6 @@ log_success() { echo "✅ $*"; }
 log_error()   { echo "❌ $*"; }
 
 command -v az >/dev/null 2>&1 || { log_error "Azure CLI (az) is required"; exit 1; }
-
-az account set --subscription "$SUBSCRIPTION"
 
 INFRA_DIR="$REPO_ROOT/infra"
 ERRORS=0
@@ -64,6 +62,7 @@ log_info "Running what-if analysis..."
 export FOUNDRY_API_KEY="${FOUNDRY_API_KEY:-placeholder}"
 
 az deployment sub what-if \
+  --subscription "$SUBSCRIPTION" \
   --location eastus2 \
   --template-file "$INFRA_DIR/main.bicep" \
   --parameters "$INFRA_DIR/parameters/prod.bicepparam"
