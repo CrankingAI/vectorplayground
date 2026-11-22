@@ -47,7 +47,7 @@ EOF
 }
 
 require_value() {
-  [[ $# -ge 2 && -n "$2" ]] || { echo "Error: $1 requires a value" >&2; usage 1; }
+  [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || { echo "Error: $1 requires a value" >&2; usage 1; }
 }
 
 MODE="summary"
@@ -224,6 +224,8 @@ case "$MODE" in
   legacy)
     # Landing page views on the production host, recorded by the frontend (app/src/analytics.ts).
     # The Cloudflare redirect tags legacy arrivals with utm_source=funwithvectors.
+    # Only the apex counts: SWA 301-redirects www and the azurestaticapps.net host to it,
+    # so no page loads there. Excluding other hosts drops PR-preview and localhost views.
     LANDINGS="pageViews
       | $TIME_FILTER
       | where tostring(customDimensions.landing) == 'true' and url startswith 'https://vectorplayground.com/'

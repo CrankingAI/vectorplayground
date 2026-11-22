@@ -57,7 +57,9 @@ export function initAnalytics(): void {
 
 /** Records an in-app navigation as a page view. */
 export function trackPageView(): void {
-  void client.then((appInsights) => appInsights?.trackPageView({ uri: window.location.href }));
+  // Read the URL now: views queued while the SDK loads must keep their own URL.
+  const uri = window.location.href;
+  void client.then((appInsights) => appInsights?.trackPageView({ uri }));
 }
 
 function stripCampaignParams(params: URLSearchParams): void {
