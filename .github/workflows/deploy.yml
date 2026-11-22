@@ -47,6 +47,8 @@ jobs:
       - name: Build
         working-directory: app
         run: npm run build
+        env:
+          VITE_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ vars.APPLICATIONINSIGHTS_CONNECTION_STRING }}
 
       - name: Copy SWA config
         working-directory: app
