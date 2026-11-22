@@ -46,6 +46,9 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 @description('Log Analytics workspace resource ID.')
 output logAnalyticsWorkspaceId string = logAnalytics.id
 
+@description('Application Insights resource ID.')
+output appInsightsId string = appInsights.id
+
 @description('Application Insights connection string for SDK configuration.')
 output appInsightsConnectionString string = appInsights.properties.ConnectionString
 
