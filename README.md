@@ -1,5 +1,5 @@
 [![GitHub stars](https://img.shields.io/github/stars/CrankingAI/vectorplayground?style=social)](https://github.com/CrankingAI/vectorplayground)
-[![.NET 10](https://img.shields.io/badge/.NET-10-512bd4)](https://dotnet.microsoft.com/en-us/download)
+[![.NET 11](https://img.shields.io/badge/.NET-11-512bd4)](https://dotnet.microsoft.com/en-us/download)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # Vector Playground
@@ -60,7 +60,7 @@ Embeddings support arithmetic! Try expressions like:
 ## Architecture
 
 - **Frontend**: React 19 + TypeScript + Vite + Material UI
-- **Backend**: .NET 10 Azure Functions with Microsoft.Extensions.AI
+- **Backend**: .NET 11 Azure Functions with Microsoft.Extensions.AI
 - **Infrastructure**: Azure Static Web Apps + Azure AI Foundry, deployed via Bicep
 - **Domain**: vectorplayground.com
 
