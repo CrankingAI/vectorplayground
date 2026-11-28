@@ -10,7 +10,7 @@ These semantic representations are supported by what the AI field refers to as a
 
 This instructional website is a playground for exploring and understanding vector embeddings.
 
-Live at [vectorplayground.com](https://www.vectorplayground.com)
+Live at [vectorplayground.com](https://www.vectorplayground.com) &mdash; the go-forward successor to funwithvectors.com, which (along with its GitHub repo) now redirects here.
 
 ## What Can You Do?
 
